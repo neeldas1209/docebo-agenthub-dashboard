@@ -20,14 +20,18 @@
     --muted: #64748B;
     --bg: #F8FAFC;
     --border: #E2E8F0;
-    --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+    --gold: #CA8A04; --gold-light: #FEF9C3;
+    --silver: #94A3B8; --silver-light: #F1F5F9;
+    --bronze: #92613A; --bronze-light: #FDF4EC;
+    --card-shadow: 0 14px 36px -6px rgba(0,0,0,0.22), 0 8px 16px -4px rgba(0,0,0,0.12);
     --card-hover: 0 10px 25px -5px rgb(0 0 0 / 0.08), 0 4px 10px -6px rgb(0 0 0 / 0.04);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: var(--bg); color: var(--body-dark); line-height: 1.55; display: flex; min-height: 100vh; }
 
   /* Sidebar */
-  .sidebar { width: 232px; min-height: 100vh; background: #fff; border-right: 1px solid var(--border); position: fixed; top: 0; left: 0; display: flex; flex-direction: column; z-index: 50; }
+  .sidebar { width: 232px; min-height: 100vh; background: #fff; border-right: 1px solid var(--border); position: fixed; top: 0; left: 0; display: none; flex-direction: column; z-index: 50; }
+  .sidebar.visible { display: flex; }
   .sidebar-header { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
   .sidebar-header h1 { font-size: 15px; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; }
   .sidebar-header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -40,7 +44,7 @@
   .sidebar-footer strong { color: var(--body-dark); }
 
   /* Main */
-  .main { margin-left: 232px; flex: 1; padding: 32px 40px 60px; }
+  .main { margin-left: 0; flex: 1; padding: 32px 40px 60px; }
   .tab-eyebrow { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--blue); margin-bottom: 8px; }
   .tab-title { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; color: var(--navy); margin-bottom: 8px; }
   .tab-subtitle { font-size: 17px; color: var(--body); line-height: 1.55; margin-bottom: 28px; }
@@ -82,9 +86,19 @@
 
   /* Expandable */
   .expand-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, opacity 0.25s ease, margin 0.2s ease; opacity: 0; }
-  .open .expand-body { max-height: 500px; opacity: 1; margin-top: 12px; }
+  .open > .expand-body { max-height: 2000px; opacity: 1; margin-top: 12px; }
   .expand-hint { font-size: 12px; color: #6366F1; font-weight: 600; margin-top: 6px; }
-  .open .expand-hint { display: none; }
+  .open > .expand-hint { display: none; }
+
+  /* Tier collapsible */
+  .tier-wrap { margin-bottom:16px; }
+  .tier-header { display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0 8px;border-bottom:2px solid var(--border);margin-bottom:0;transition:margin 0.2s; }
+  .tier-header:hover { opacity:0.8; }
+  .tier-chevron { transition:transform 0.25s;font-size:18px;color:var(--muted); }
+  .tier-wrap.open .tier-chevron { transform:rotate(180deg); }
+  .tier-body { max-height:0;overflow:hidden;transition:max-height 0.4s ease,opacity 0.3s ease;opacity:0; }
+  .tier-wrap.open .tier-body { max-height:4000px;opacity:1; }
+  .tier-wrap.open .tier-header { margin-bottom:10px; }
 
   /* Stat */
   .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -135,7 +149,7 @@
 
   /* Persona */
   .persona-vp { display: none; margin-top: 10px; padding: 12px; border-radius: 10px; background: var(--blue-light); font-size: 13px; color: var(--blue-dark); font-weight: 500; line-height: 1.5; }
-  .open .persona-vp { display: block; }
+  .open > .persona-vp { display: block; }
 
   /* Bottom nav */
   .bottom-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -164,11 +178,11 @@
 <!-- Tooltip -->
 <div class="tooltip" id="tooltip"></div>
 
+
 <!-- Sidebar -->
-<nav class="sidebar">
-  <div class="sidebar-header">
-    <h1>AgentHub Demand Gen</h1>
-    <p>Enterprise Marketing Manager</p>
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-header" style="padding:20px 20px 16px;cursor:pointer;" onclick="switchTab(0)">
+    <span style="font-size:24px;font-weight:800;color:#2563EB;font-family:Plus Jakarta Sans,sans-serif;letter-spacing:-0.5px;">docebo</span>
   </div>
   <ul class="nav-list" id="navList"></ul>
   <div class="sidebar-footer"><strong>Neel Das</strong><br>Prepared for Docebo</div>
@@ -180,7 +194,8 @@
 <script>
 // ═══ DATA ═══
 const TABS = [
-  { id: "challenge", label: "The Challenge", icon: "grid" },
+  { id: "cover", label: "Cover", icon: "home" },
+  { id: "challenge", label: "Market Context", icon: "grid" },
   { id: "competitive", label: "Competitive Landscape", icon: "swords" },
   { id: "icp", label: "ICP + Buying Committee", icon: "target" },
   { id: "acctintel", label: "Account Intelligence", icon: "search" },
@@ -193,7 +208,8 @@ const TABS = [
 ];
 
 const HEADERS = [
-  ["The Challenge","AgentHub is a category bet, not a feature launch.","No analyst has sized this market. No buyer has a budget line for it. Demand gen has to do two jobs at once."],
+  ["","",""],
+  ["Market Context","AgentHub is a category bet, not a feature launch.","No analyst has sized this market. No buyer has a budget line for it. Demand gen has to do two jobs at once."],
   ["Competitive Landscape","Every competitor owns a piece. Nobody closes the loop.","AgentHub sits at the intersection of three categories. The bet is that the closed loop is worth more than any piece."],
   ["ICP + Buying Committee","Target accounts where knowledge, learning, and skills run as separate silos.","AgentHub closes the loop between what an organization knows, how it teaches, and whether anyone learned. The ICP targets where that gap costs enough to act."],
   ["Account Intelligence","How we find, research, and build intelligence on target accounts.","The ICP defines who we are looking for. This section defines how we find them and build the intelligence needed to score and prioritize."],
@@ -202,7 +218,7 @@ const HEADERS = [
   ["Programs + Channels","The programs and channels that turn tiered accounts into pipeline.","Three marketing-owned tools power both programs. Tier 1 gets the heaviest investment. Tier 3 gets monitored. Everything in between scales with signals."],
   ["Funnel Math","The math that connects campaigns to pipeline and pipeline to revenue.","Conservative assumptions for a pre-GA, new category, enterprise motion. Every number is a starting hypothesis. Click any funnel stage for the rationale."],
   ["30/60/90/120 Timeline","A 120-day roadmap to full activation.","Three workstreams run in parallel: infrastructure, asset development, and campaign launch. Infrastructure is front-loaded because campaigns without a solid foundation produce activity, not pipeline."],
-  ["AI Execution Layer","How AI accelerates every part of this plan.","This plan was built by one person in a week. The AI layer makes execution faster and more scalable."],
+  ["AI Execution Layer","How AI accelerates this plan.","The AI layer makes execution faster and more scalable."],
 ];
 
 const SVG = {
@@ -219,40 +235,67 @@ let radarChart = null;
 // ═══ NAV ═══
 function buildNav() {
   const nav = document.getElementById('navList');
-  nav.innerHTML = TABS.map((t, i) => `<li class="nav-item${i === 0 ? ' active' : ''}" onclick="switchTab(${i})">${t.label}</li>`).join('');
+  nav.innerHTML = TABS.slice(1).map((t, i) => `<li class="nav-item${i === 0 ? ' active' : ''}" onclick="switchTab(${i + 1})">${t.label}</li>`).join('');
 }
 
 function switchTab(i) {
   activeTab = i;
-  document.querySelectorAll('.nav-item').forEach((el, j) => el.classList.toggle('active', j === i));
+  document.querySelectorAll('.nav-item').forEach((el, j) => el.classList.toggle('active', j === i - 1));
   renderMain();
   window.scrollTo(0, 0);
 }
 
 // ═══ RENDER ═══
-function renderMain() {
-  // Add Docebo logo to top-right of content area
-  const logoHTML = '<div style="position:fixed;top:14px;right:24px;z-index:999;display:flex;align-items:center;gap:8px;"><img src="https://www.docebo.com/wp-content/uploads/2024/07/Docebo-Logo.svg" alt="Docebo" style="height:24px;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"><span style="display:none;font-size:18px;font-weight:800;color:#0F172A;font-family:Plus Jakarta Sans,sans-serif;letter-spacing:-0.5px;">docebo</span></div>';
-  if (!document.getElementById('doceboLogo')) {
-    const logoDiv = document.createElement('div');
-    logoDiv.id = 'doceboLogo';
-    logoDiv.innerHTML = logoHTML;
-    document.body.appendChild(logoDiv);
+function resetTab() {
+  document.querySelectorAll('.open').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('.tier-wrap.open').forEach(el => el.classList.remove('open'));
+  // Reset AI agent popups
+  if(window._aiActive && window._aiActive.id) {
+    const id = window._aiActive.id;
+    if(window._aiActive.i === -1) {
+      document.getElementById(id+'Nlead').setAttribute('r','42');
+    } else {
+      document.getElementById(id+'L'+window._aiActive.i).setAttribute('opacity','0.12');
+      document.getElementById(id+'L'+window._aiActive.i).setAttribute('stroke-width','2.5');
+      document.getElementById(id+'N'+window._aiActive.i).setAttribute('r','36');
+    }
+    const popL = document.getElementById(id+'PopL');
+    const popR = document.getElementById(id+'PopR');
+    if(popL) popL.innerHTML = '';
+    if(popR) popR.innerHTML = '';
+    window._aiActive = {id:null, i:null};
   }
-  const [eyebrow, title, subtitle] = HEADERS[activeTab];
+  window.scrollTo(0, 0);
+}
+
+function renderMain() {
+  const sidebar = document.getElementById('sidebar');
   const main = document.getElementById('main');
+  if (activeTab === 0) {
+    sidebar.classList.remove('visible');
+    main.style.marginLeft = '0';
+    main.innerHTML = '<div id="tabContent"></div>';
+    renderCover();
+    return;
+  }
+  sidebar.classList.add('visible');
+  main.style.marginLeft = '232px';
+  const [eyebrow, title, subtitle] = HEADERS[activeTab];
   main.innerHTML = `
     <div class="tab-eyebrow">${eyebrow}</div>
     <h1 class="tab-title">${title}</h1>
     <p class="tab-subtitle">${subtitle}</p>
     <div id="tabContent"></div>
     <div class="bottom-nav">
-      <button class="btn btn-ghost" onclick="switchTab(${activeTab - 1})" ${activeTab === 0 ? 'disabled' : ''}>← Previous</button>
-      <span style="font-size:14px;color:var(--muted);font-weight:600;">${activeTab + 1} / ${TABS.length}</span>
-      <button class="btn btn-primary" onclick="switchTab(${activeTab + 1})" ${activeTab === 9 ? 'disabled' : ''}>Next →</button>
+      <button class="btn btn-ghost" onclick="switchTab(${activeTab - 1})">← Previous</button>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <span style="font-size:13px;color:#6366F1;cursor:pointer;font-weight:600;" onclick="resetTab()">↺ Reset</span>
+        <span style="font-size:14px;color:var(--muted);font-weight:600;">${activeTab} / ${TABS.length - 1}</span>
+      </div>
+      <button class="btn btn-primary" onclick="switchTab(${activeTab + 1})" ${activeTab === TABS.length - 1 ? 'disabled' : ''}>Next →</button>
     </div>
   `;
-  const renderers = [renderChallenge, renderCompetitive, renderICP, renderAccountIntel, renderScoring, renderMessaging, renderPrograms, renderFunnel, renderTimeline, renderAI];
+  const renderers = [null, renderChallenge, renderCompetitive, renderICP, renderAccountIntel, renderScoring, renderMessaging, renderPrograms, renderFunnel, renderTimeline, renderAI];
   renderers[activeTab]();
 }
 
@@ -261,8 +304,30 @@ function card(content, extra = '') { return `<div class="card ${extra}">${conten
 function takeaway(text) { return `<div class="takeaway">${SVG.info}<div>${text}</div></div>`; }
 function tag(label, color) { return `<span class="tag tag-${color}">${label}</span>`; }
 function toggleExpand(el) { el.classList.toggle('open'); }
+function toggleTier(el) { el.closest('.tier-wrap').classList.toggle('open'); }
 
-// ═══ TAB 0: THE CHALLENGE ═══
+// ═══ COVER PAGE ═══
+function renderCover() {
+  document.getElementById('tabContent').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 120px);text-align:center;padding:40px 20px;">
+      <div style="margin-bottom:40px;">
+        <span style="font-size:48px;font-weight:800;color:#2563EB;font-family:Plus Jakarta Sans,sans-serif;letter-spacing:-1px;">docebo</span>
+      </div>
+      <div style="width:80px;height:3px;border-radius:2px;background:linear-gradient(90deg, #2563EB, #059669, #F97316);margin-bottom:40px;"></div>
+      <h1 style="font-size:44px;font-weight:800;letter-spacing:-0.04em;color:var(--navy);line-height:1.1;margin-bottom:8px;">AgentHub</h1>
+      <h2 style="font-size:24px;font-weight:600;color:var(--muted);letter-spacing:-0.01em;margin-bottom:40px;">Demand Generation Plan</h2>
+      <div style="width:40px;height:1px;background:var(--border);margin-bottom:32px;"></div>
+      <div style="font-size:16px;color:var(--body-dark);margin-bottom:6px;font-weight:600;">Prepared by Neel Das</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:4px;">For the Enterprise Marketing Manager Role</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:48px;">June 29, 2026</div>
+      <button class="btn btn-primary" onclick="switchTab(1)" style="padding:14px 32px;font-size:16px;border-radius:14px;">
+        Begin →
+      </button>
+    </div>
+  `;
+}
+
+// ═══ TAB 0: MARKET CONTEXT ═══
 function renderChallenge() {
   document.getElementById('tabContent').innerHTML = `
     <!-- Hero -->
@@ -496,47 +561,37 @@ function renderICP() {
       <div style="font-size:13px;color:#6366F1;font-weight:600;margin-top:4px;">Click any signal type to expand</div>
     </div>
 
-    <!-- Row 1: Firmographic + Technographic Required + Technographic High-Value -->
-    <div class="grid-3" style="margin-bottom:14px;">
+    <!-- ICP Signal Cards - 2x2 Grid -->
+    <div class="grid-2" style="margin-bottom:12px;">
       <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;border-left:4px solid var(--purple);cursor:pointer;">
         <div style="font-size:13px;font-weight:800;color:var(--purple);text-transform:uppercase;letter-spacing:0.06em;">Firmographic</div>
         <div style="font-size:14px;color:var(--body-dark);margin-top:4px;">1,000-5,000+ NA enterprise, knowledge-intensive industries</div>
         <div class="expand-body">
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-            <span style="font-size:13px;font-weight:600;color:var(--body-dark);padding:5px 12px;border-radius:8px;background:var(--purple-light);border:1px solid #DDD6FE;">1,000-5,000+ employees</span>
-            <span style="font-size:13px;font-weight:600;color:var(--body-dark);padding:5px 12px;border-radius:8px;background:var(--purple-light);border:1px solid #DDD6FE;">North America</span>
-            <span style="font-size:13px;font-weight:600;color:var(--body-dark);padding:5px 12px;border-radius:8px;background:var(--purple-light);border:1px solid #DDD6FE;">$100M+ revenue</span>
+          <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">
+            <strong>Employees:</strong> 1,000-5,000+<br>
+            <strong>Geography:</strong> North America<br>
+            <strong>Revenue:</strong> $100M+<br>
+            <strong>Industries:</strong> Tech/SaaS, Financial Services, Healthcare, Manufacturing, Professional Services
           </div>
-          <div style="font-size:13px;color:var(--body-dark);">Industries: Tech/SaaS, Financial Services, Healthcare, Manufacturing, Professional Services</div>
         </div>
       </div>
 
       <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;border-left:4px solid var(--blue);cursor:pointer;">
-        <div style="font-size:13px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;">Technographic (Required)</div>
-        <div style="font-size:14px;color:var(--body-dark);margin-top:4px;">Knowledge sources and HRIS infrastructure</div>
-        <div class="expand-body">
-          <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">
-            <strong>Knowledge Sources (2+ required):</strong> Confluence, SharePoint, Teams, Slack, Google Drive<br>
-            <strong>HRIS + SSO:</strong> Workday HCM, SAP SuccessFactors, ADP + Okta/Entra
-          </div>
-        </div>
-      </div>
-
-      <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;border-left:4px solid var(--green);cursor:pointer;">
-        <div style="font-size:13px;font-weight:800;color:var(--green-dark);text-transform:uppercase;letter-spacing:0.06em;">Technographic (High-Value)</div>
-        <div style="font-size:14px;color:var(--body-dark);margin-top:4px;">AI tools deployed, existing Docebo, or legacy LMS</div>
+        <div style="font-size:13px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:0.06em;">Technographic</div>
+        <div style="font-size:14px;color:var(--body-dark);margin-top:4px;">Knowledge sources, HRIS infrastructure, AI tools, and LMS landscape</div>
         <div class="expand-body">
           <div style="font-size:14px;color:var(--body-dark);line-height:1.7;">
+            <div style="font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Required</div>
+            <strong>Knowledge Sources (2+ required):</strong> Confluence, SharePoint, Teams, Slack, Google Drive<br>
+            <strong>HRIS + SSO:</strong> Workday HCM, SAP SuccessFactors, ADP + Okta/Entra<br><br>
+            <div style="font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">High-Value</div>
             <strong>AI tool deployment:</strong> Copilot, Glean, or ChatGPT Enterprise<br>
             <strong>Existing customer:</strong> Docebo LMS contract already in place<br>
             <strong>Legacy LMS:</strong> SuccessFactors Learning, Cornerstone, Workday Learning
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Row 2: Behavioral Triggers + Anti-ICP -->
-    <div class="grid-2" style="margin-bottom:12px;">
       <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;border-left:4px solid var(--orange);cursor:pointer;">
         <div style="font-size:13px;font-weight:800;color:var(--orange);text-transform:uppercase;letter-spacing:0.06em;">Behavioral Triggers</div>
         <div style="font-size:14px;color:var(--body-dark);margin-top:4px;">Five signals that make an account "now"</div>
@@ -628,8 +683,14 @@ function renderAccountIntel() {
           <div style="width:30px;height:30px;border-radius:8px;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;">1</div>
           <div style="font-size:18px;font-weight:800;color:var(--navy);">Program 1: Install-Base Expansion</div>
         </div>
-        <div style="font-size:14px;color:var(--body-dark);margin-bottom:10px;">Starting universe: every existing Docebo LMS customer in NA. Already in Salesforce. <span style="color:#6366F1;font-weight:600;">Click any signal to expand.</span></div>
-        <div class="section-label">Intelligence Signals to Gather per Account: 7 Signals</div>
+        <div style="font-size:14px;color:var(--body-dark);margin-bottom:10px;">Starting universe: every existing Docebo LMS customer in NA. Already in Salesforce.</div>
+        <div class="tier-wrap">
+        <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--blue);">
+          <div class="section-label" style="margin:0;">Intelligence Signals to Gather per Account: 7 Signals</div>
+          <span class="tier-chevron">▾</span>
+        </div>
+        <div class="tier-body">
+        <div style="font-size:13px;color:#6366F1;font-weight:600;margin-bottom:6px;padding-top:4px;">Click any signal to expand</div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           ${[
             ['AgentHub demo request / Inspire 2026','Salesforce','Behavioral','Hand-raiser signal. 500+ customers requested agents at Inspire. Highest-priority starting list for expansion.'],
@@ -637,7 +698,7 @@ function renderAccountIntel() {
             ['New AI/L&D leadership hire','UserGems','Behavioral','New Head of AI, CAIO, or CHRO. Executive sponsor with transformation mandate and fresh budget.'],
             ['High platform engagement','Gainsight','Behavioral','Top-quartile usage signals a satisfied, active customer. Expansion lands better when the base product is valued.'],
             ['Knowledge fragmentation (2+ sources)','ZoomInfo','Technographic','Validates Enterprise Knowledge value prop. More sources = more fragmentation = stronger case for the closed loop.'],
-            ['Support tickets / feature requests','CS Platform','Behavioral','Unprompted signal. They have told us they have the pain AgentHub solves.'],
+            ['Support tickets / feature requests','Customer Support Platform','Behavioral','Unprompted signal. They have told us they have the pain AgentHub solves.'],
             ['Public skills / AI initiative','LinkedIn, earnings calls','Behavioral','Strategic alignment signal. Board-level mandate that needs a platform behind it.'],
           ].map(([name,tool,type,detail]) => `
             <div class="card hover" onclick="toggleExpand(this)" style="padding:10px 14px;cursor:pointer;background:var(--blue-light);border:1px solid var(--blue-pale);box-shadow:none;">
@@ -649,11 +710,23 @@ function renderAccountIntel() {
             </div>
           `).join('')}
         </div>
-        <div style="margin-top:12px;padding:10px 14px;border-radius:10px;background:#F8FAFC;border:1px solid var(--border);font-size:13px;color:var(--body-dark);">
-          <strong>Key note:</strong> Expansion deals bring new stakeholders (Head of AI, CISO, IT) not part of the original LMS purchase. Intelligence must include these new contacts.
-        </div>
+        </div><!-- /tier-body -->
+        </div><!-- /tier-wrap -->
+
         <div style="margin-top:6px;padding:10px 14px;border-radius:10px;background:#F8FAFC;border:1px solid var(--border);font-size:13px;color:var(--body-dark);">
           <strong>Output:</strong> Every existing customer gets a complete signal profile that feeds directly into the expansion scoring framework.
+        </div>
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:10px 14px;cursor:pointer;background:#F0F9FF;border:1px solid var(--blue-pale);box-shadow:none;margin-top:8px;">
+          <div style="font-size:14px;font-weight:600;color:var(--blue);">Example Signal Profile: Acme Financial Services</div>
+          <div class="expand-body"><div style="font-size:13px;color:var(--body-dark);line-height:1.7;padding-top:8px;">
+            <strong>1. AgentHub demo / Inspire 2026:</strong> Yes — requested agents demo at Inspire. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>2. Renewal within 120 days:</strong> Yes — renewal in 87 days. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>3. New AI/L&D leadership hire:</strong> New CAIO hired 3 months ago. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>4. High platform engagement:</strong> Top quartile, 2,400 monthly active users. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>5. Knowledge fragmentation:</strong> SharePoint + Confluence + Slack. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>6. Support tickets:</strong> No relevant tickets. <span style="color:var(--muted);font-weight:600;">Inactive</span><br>
+            <strong>7. Public skills initiative:</strong> No public announcement found. <span style="color:var(--muted);font-weight:600;">Inactive</span>
+          </div></div>
         </div>
       </div>
 
@@ -663,25 +736,40 @@ function renderAccountIntel() {
           <div style="width:30px;height:30px;border-radius:8px;background:var(--orange);color:white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;">2</div>
           <div style="font-size:18px;font-weight:800;color:var(--navy);">Program 2: Net-New Enterprise Pipeline</div>
         </div>
-        <div style="font-size:14px;color:var(--body-dark);margin-bottom:10px;">No existing relationship. Build the target universe from scratch, then gather intelligence to score and tier. <span style="color:#6366F1;font-weight:600;">Click any signal to expand.</span></div>
+        <div style="font-size:14px;color:var(--body-dark);margin-bottom:10px;">No existing relationship. Build the target universe from scratch, then gather intelligence to score and tier.</div>
 
-        <div class="section-label">Layer 1: Build Target Universe <span style="font-weight:400;color:var(--muted);font-size:11px;">[ZoomInfo]</span></div>
+        <div class="tier-wrap">
+        <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--orange);">
+          <div class="section-label" style="margin:0;">Layer 1: Build Target Universe <span style="font-weight:400;color:var(--muted);font-size:11px;">[ZoomInfo]</span></div>
+          <span class="tier-chevron">▾</span>
+        </div>
+        <div class="tier-body">
+        <div style="padding-top:4px;">
         <div style="padding:10px 14px;border-radius:10px;background:var(--orange-light);border:1px solid #FED7AA;margin-bottom:10px;font-size:13px;color:var(--body-dark);line-height:1.6;">
           <strong>Firmographic:</strong> 1,000+ employees, NA, $100M+ revenue, knowledge-intensive industries<br>
           <strong>Technographic:</strong> 2+ of Confluence, SharePoint, Teams, Slack, Drive. HRIS with SSO.<br>
           <strong style="color:var(--navy);">&#8595; Expected output: 200-500 accounts</strong>
         </div>
+        </div>
+        </div><!-- /tier-body -->
+        </div><!-- /tier-wrap Layer 1 -->
 
-        <div class="section-label">Layer 2: Intelligence Signals to Gather per Account: 7 Signals</div>
+        <div class="tier-wrap">
+        <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--orange);">
+          <div class="section-label" style="margin:0;">Layer 2: Intelligence Signals per Account: 7 Signals</div>
+          <span class="tier-chevron">▾</span>
+        </div>
+        <div class="tier-body">
+        <div style="font-size:13px;color:#6366F1;font-weight:600;margin-bottom:6px;padding-top:4px;">Click any signal to expand</div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           ${[
             ['Active intent on relevant topics','Bombora / 6sense','Behavioral','Actively researching LMS alternatives, skills-based org, AI learning. Timing is everything in enterprise sales.'],
             ['New AI/L&D leadership hire','UserGems','Behavioral','Executive sponsor with transformation mandate. Without top-down air cover, pre-GA enterprise sales stall.'],
             ['Running legacy LMS','ZoomInfo','Technographic','SuccessFactors Learning, Cornerstone, Workday Learning. Displacement opportunity.'],
             ['Deploying Copilot / Glean / ChatGPT Enterprise','ZoomInfo','Technographic','AI budget exists. "Answers are not outcomes" is directly relevant. Opens the closed-loop conversation.'],
-            ['LMS renewal approaching','Intent data','Behavioral','Switching moment. Combined with legacy LMS signal, the account is likely in an active buying cycle.'],
+            ['LMS renewal approaching','ZoomInfo','Behavioral','Switching moment. Combined with legacy LMS signal, the account is likely in an active buying cycle.'],
             ['Public skills-based org initiative','LinkedIn, earnings calls','Behavioral','Board-level mandate that needs a platform behind it. Strategic alignment signal.'],
-            ['Rapid headcount growth / M&A','ZoomInfo, Crunchbase','Firmographic','20%+ YoY headcount growth or recent acquisition creating onboarding and knowledge transfer pain.'],
+            ['Rapid headcount growth / M&A','ZoomInfo','Firmographic','20%+ YoY headcount growth or recent acquisition creating onboarding and knowledge transfer pain.'],
           ].map(([name,tool,type,detail]) => `
             <div class="card hover" onclick="toggleExpand(this)" style="padding:10px 14px;cursor:pointer;background:var(--orange-light);border:1px solid #FED7AA;box-shadow:none;">
               <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -692,28 +780,42 @@ function renderAccountIntel() {
             </div>
           `).join('')}
         </div>
+        </div><!-- /tier-body -->
+        </div><!-- /tier-wrap -->
         <div style="margin-top:12px;padding:10px 14px;border-radius:10px;background:#F8FAFC;border:1px solid var(--border);font-size:13px;color:var(--body-dark);">
-          <strong>Output:</strong> Every account gets a complete signal profile that feeds directly into the scoring framework.
+          <strong>Output:</strong> Every account gets a complete signal profile that feeds directly into the net-new scoring framework.
+        </div>
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:10px 14px;cursor:pointer;background:#FFF7ED;border:1px solid #FED7AA;box-shadow:none;margin-top:8px;">
+          <div style="font-size:14px;font-weight:600;color:var(--orange);">Example Signal Profile: Meridian Health Systems</div>
+          <div class="expand-body"><div style="font-size:13px;color:var(--body-dark);line-height:1.7;padding-top:8px;">
+            <strong>1. Active intent:</strong> High intent on "LMS alternatives" and "AI corporate training." <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>2. New AI/L&D hire:</strong> Hired VP of Learning and Development 2 months ago. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>3. Running legacy LMS:</strong> SuccessFactors Learning deployed. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>4. Deploying Copilot/Glean:</strong> Microsoft Copilot deployed org-wide. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>5. LMS renewal:</strong> No data on renewal timing. <span style="color:var(--muted);font-weight:600;">Inactive</span><br>
+            <strong>6. Public skills initiative:</strong> CEO mentioned "skills-first workforce" in Q1 earnings call. <span style="color:var(--green-dark);font-weight:600;">Active</span><br>
+            <strong>7. Rapid growth / M&A:</strong> No significant growth or acquisition activity. <span style="color:var(--muted);font-weight:600;">Inactive</span>
+          </div></div>
         </div>
       </div>
     </div>
 
-    <!-- Who Does What -->
-    <div class="grid-2" style="margin-bottom:16px;">
-      <div class="card" style="padding:16px 20px;border-left:4px solid var(--blue);">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">Who Does What: Expansion</div>
-        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">
-          <strong>Marketing:</strong> Builds prioritized expansion list, creates campaign assets (positioning deck, ROI calculator, customer-specific use cases).<br>
-          <strong>CSM/AM:</strong> Owns the relationship and leads the conversation. Marketing arms them with intelligence and creates air cover.
+    <!-- Signal Decay -->
+    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Signal Decay</div>
+    <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">Not all signals stay relevant forever. Decay windows determine how long each signal type contributes to the account signal profile before it needs to be refreshed.</div>
+    <div class="grid-4" style="margin-bottom:16px;">
+      ${[
+        ['Active Intent & Renewal','90 days','var(--blue)','Active intent on relevant topics, LMS renewal approaching. If no new activity in 90 days, the buying window may have closed.'],
+        ['Leadership Hires','12 months','var(--green)','New AI/L&D leadership hire. A new CAIO or CHRO has about 12 months of transformation mandate before priorities shift.'],
+        ['Tech Stack Signals','Stable','var(--purple)','Knowledge fragmentation, legacy LMS, Copilot/Glean deployment. Do not decay unless the company migrates platforms.'],
+        ['Engagement, Growth & Initiatives','6-12 months','var(--orange)','AgentHub demo/Inspire, platform engagement, support tickets, public skills initiative, rapid growth/M&A. Event-based signals that fade as priorities shift.'],
+      ].map(([name,window,color,desc]) => `
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 16px;border-top:3px solid ${color};cursor:pointer;">
+          <div style="font-size:15px;font-weight:700;color:var(--navy);">${name}</div>
+          <div style="font-size:14px;font-weight:700;color:${color};margin-top:4px;">${window}</div>
+          <div class="expand-body"><div style="font-size:13px;color:var(--body-dark);line-height:1.5;padding-top:8px;">${desc}</div></div>
         </div>
-      </div>
-      <div class="card" style="padding:16px 20px;border-left:4px solid var(--orange);">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">Who Does What: Net-New</div>
-        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">
-          <strong>Marketing:</strong> Builds the universe, gathers signals, runs campaigns, generates and qualifies MQLs.<br>
-          <strong>BDR:</strong> Executes multi-stakeholder outreach on Tier 1 accounts. Persona-specific sequences.
-        </div>
-      </div>
+      `).join('')}
     </div>
 
     <!-- Data Stack -->
@@ -726,6 +828,7 @@ function renderAccountIntel() {
         ['ZoomInfo','Confirm Wk 1','amber','Firmographic data, technographic data, contact acquisition'],
         ['Intent Provider','Confirm Wk 1','amber','Topic-level intent signals (Bombora, 6sense, or equivalent)'],
         ['Product Analytics','Confirm Wk 1','amber','Customer usage data for expansion (Gainsight or equivalent)'],
+        ['Customer Support Platform','Confirm Wk 1','amber','Support tickets and feature requests that signal AgentHub-relevant pain (Zendesk, Salesforce Service Cloud, or equivalent)'],
       ].map(([tool,status,color,desc]) => `
         <div class="card" style="padding:14px 16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -744,7 +847,7 @@ function renderAccountIntel() {
 // ═══ TAB 4: SCORING ═══
 const SCORING = {
   p1: { title: 'Expansion Scoring Model (out of 100)', color: '#1E40AF', colorAccent: 'var(--blue)', colorLight: 'var(--blue-light)', signals: [
-    ['Requested AgentHub demo / Inspire 2026',20,'Hand-raiser. Self-identified interest. Strongest signal we have.'],
+    ['Requested AgentHub demo / Inspire 2026',20,'Hand-raiser. Self-identified interest. Auto-qualifies for Tier 1 regardless of total score.'],
     ['Renewal within 120 days',20,'Timing window open. Expansion easiest when contract is being discussed.'],
     ['Hired Head of AI / CAIO / CHRO',20,'New leadership brings new budget and mandate for AI transformation.'],
     ['High platform engagement (top quartile)',15,'Satisfied, active customer. Expansion lands when base product is valued.'],
@@ -752,9 +855,9 @@ const SCORING = {
     ['Support tickets / feature requests',10,'Unprompted signal. They told us they have the pain AgentHub solves.'],
     ['Public skills / AI initiative',5,'Strategic alignment. Useful for framing but most indirect signal.'],
   ], tiers: [
-    [55,'Tier 1: Active Expansion','var(--blue)','Score 55+','High-readiness accounts with multiple strong signals. Sales-led with dedicated marketing support. Priority for AgentHub beta access or customer advisory board.'],
-    [25,'Tier 2: Warm & Monitor','var(--amber-dark)','Score 25-54','Showing some signals but not enough for active expansion push. Included in AgentHub awareness campaigns. Monitored for signal changes that promote to Tier 1.'],
-    [0,'Tier 3: Standard Nurture','var(--muted)','Score below 25','No active expansion signals. Standard customer marketing. Monitored for new signals via UserGems and intent data.'],
+    [55,'Tier 1: Active Expansion','var(--gold)','Score 55+ or auto-qualified','High-readiness accounts with multiple strong signals, or auto-qualified via demo request or Inspire hand-raiser. Sales-led with dedicated marketing support. Priority for AgentHub beta access or customer advisory board.'],
+    [25,'Tier 2: Signal-Driven Nurture','var(--silver)','Score 25-54','Showing some signals but not enough for active expansion push. Included in AgentHub awareness campaigns. Monitored for signal changes that promote to Tier 1.'],
+    [0,'Tier 3: Awareness Only','var(--bronze)','Score below 25','No active expansion signals. Standard customer marketing. Monitored for new signals that promote to Tier 2.'],
   ]},
   p2: { title: 'Net-New Scoring Model (out of 100)', color: '#C2410C', colorAccent: 'var(--orange)', colorLight: 'var(--orange-light)', signals: [
     ['Active intent on relevant topics',25,'Actively researching the problem AgentHub solves. Timing is everything.'],
@@ -765,9 +868,9 @@ const SCORING = {
     ['Public skills-based org initiative',10,'Board-level mandate that needs a platform behind it.'],
     ['Rapid headcount growth / M&A',5,'Onboarding and knowledge transfer pain creates urgency.'],
   ], tiers: [
-    [50,'Tier 1: Active ABM','var(--blue)','Score 50+ (40-75 accounts)','Highest-priority accounts. Full ABM treatment with deep account research, buying committee mapping, and persona-specific multi-channel outreach.'],
-    [25,'Tier 2: Signal-Driven Nurture','var(--amber-dark)','Score 25-49 (100-150 accounts)','Showing some signals but not enough for full ABM investment. Targeted content campaigns and monitoring for signal changes that promote to Tier 1.'],
-    [0,'Tier 3: Awareness Only','var(--muted)','Score below 25 (275-350 accounts)','Matched firmographic and technographic filters but not showing active buying behavior. Category education content only.'],
+    [50,'Tier 1: Active ABM','var(--gold)','Score 50+ (40-75 accounts)','Highest-priority accounts. Full ABM treatment with deep account research, buying committee mapping, and persona-specific multi-channel outreach.'],
+    [25,'Tier 2: Signal-Driven Nurture','var(--silver)','Score 25-49 (100-150 accounts)','Showing some signals but not enough for full ABM investment. Targeted content campaigns and monitoring for signal changes that promote to Tier 1.'],
+    [0,'Tier 3: Awareness Only','var(--bronze)','Score below 25 (275-350 accounts)','Matched firmographic and technographic filters but not showing active buying behavior. Category education content only. Monitored for new signals that promote to Tier 2.'],
   ]},
 };
 let scoringMode = 'p1';
@@ -779,6 +882,9 @@ function renderScoring() {
   m.signals.forEach(([n,p,r], i) => { if (checkedSignals[scoringMode+i]) score += p; });
   let tier = m.tiers[m.tiers.length-1];
   for (const t of m.tiers) { if (score >= t[0]) { tier = t; break; } }
+  // Auto-qualify: P1 first signal (AgentHub demo/Inspire) forces Tier 1
+  const autoQualified = scoringMode === 'p1' && checkedSignals['p10'];
+  if (autoQualified) { tier = m.tiers[0]; }
 
   document.getElementById('tabContent').innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
@@ -804,76 +910,110 @@ function renderScoring() {
         `).join('')}
         <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:${m.color};color:#fff;border-radius:12px;margin-top:14px;">
           <div><div style="font-size:13px;opacity:0.8;">Total Score</div><div style="font-size:36px;font-weight:800;">${score}</div></div>
-          <div style="font-size:14px;font-weight:700;padding:8px 16px;border-radius:20px;color:white;background:${tier[2]};">${tier[1]}</div>
+          <div style="font-size:14px;font-weight:700;padding:8px 16px;border-radius:20px;color:white;background:${tier[2]};">${autoQualified ? 'Tier 1: Auto-Qualified' : tier[1]}</div>
         </div>
       </div>
 
-      <div class="card" style="padding:24px;border-left:4px solid ${m.colorAccent};">
-        <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Account Tiering</div>
-        <div style="font-size:13px;color:#6366F1;font-weight:600;margin-bottom:14px;">Click any tier for details</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="card" style="padding:20px;border-left:4px solid ${m.colorAccent};">
+        <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px;">Account Tiering</div>
+        <div style="font-size:13px;color:#6366F1;font-weight:600;margin-bottom:10px;">Click any tier for details</div>
         ${m.tiers.map(([minScore,name,color,range,desc]) => `
-          <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid ${color};margin-bottom:10px;cursor:pointer;box-shadow:var(--card-shadow);">
+          <div class="card hover" onclick="toggleExpand(this)" style="padding:10px 14px;border-left:4px solid ${color};margin-bottom:8px;cursor:pointer;box-shadow:var(--card-shadow);">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-size:16px;font-weight:700;color:var(--navy);">${name}</div>
-              <span class="tag" style="background:${color}15;color:${color};border:1px solid ${color}30;font-size:12px;">${range}</span>
+              <div style="font-size:14px;font-weight:700;color:var(--navy);">${name}</div>
+              <span class="tag" style="background:${color}15;color:${color};border:1px solid ${color}30;font-size:11px;">${range}</span>
             </div>
             <div class="expand-body">
-              <div style="font-size:14px;color:var(--body-dark);line-height:1.6;padding-top:8px;">${desc}</div>
+              <div style="font-size:13px;color:var(--body-dark);line-height:1.6;padding-top:6px;">${desc}</div>
             </div>
           </div>
         `).join('')}
-        <div style="padding:12px 16px;border-radius:10px;background:#F8FAFC;border:1px solid var(--border);font-size:14px;color:var(--body-dark);margin-top:6px;">
-          <strong>Scoring cadence:</strong> Scores update weekly (automated). Tier assignments reviewed monthly. Accounts can promote up immediately on a trigger but only demote on the monthly cycle. Promote fast, demote slow.
+      </div>
+
+      <div class="card" style="padding:20px;flex:1;border-left:4px solid ${m.colorAccent};">
+        <div style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:10px;">Scoring Cadence & Promotion Triggers</div>
+        <div style="padding:10px 14px;border-radius:10px;background:#F8FAFC;border:1px solid var(--border);font-size:13px;color:var(--body-dark);margin-bottom:12px;line-height:1.8;">
+          <strong>Scores update:</strong> Weekly (automated)<br>
+          <strong>Tiers reviewed:</strong> Monthly<br>
+          <strong>Promote up:</strong> Immediately on the triggers listed below<br>
+          <strong>Demote down:</strong> Only on the monthly review cycle<br>
+          <strong>Principle:</strong> Promote fast, demote slow
         </div>
-        <div style="margin-top:12px;">
-          <div class="section-label">Immediate Promotion Triggers</div>
-          <div style="font-size:14px;color:var(--body-dark);line-height:1.7;">
-            <strong>UserGems alert:</strong> New AI/L&D leadership hire at a target account<br>
-            <strong>Intent spike:</strong> Account jumps from low to high intent on relevant topics<br>
-            <strong>First-party engagement:</strong> Pricing page visit, comparison content download, webinar registration<br>
-            <strong>CSM/AM flag:</strong> Relationship owner flags a conversation that changes the picture
-          </div>
+        <div class="section-label" style="margin-bottom:6px;">Immediate Promotion Triggers</div>
+        <div style="font-size:13px;color:var(--body-dark);line-height:1.7;">
+          <strong>AgentHub demo / Inspire 2026:</strong> Auto-qualifies for Tier 1<br>
+          <strong>UserGems alert:</strong> New AI/L&D leadership hire<br>
+          <strong>Intent spike:</strong> Low to high intent on relevant topics<br>
+          <strong>CSM/AM flag:</strong> Relationship owner flags a conversation
         </div>
+      </div>
       </div>
     </div>
 
-    <!-- Signal Decay -->
-    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Signal Decay</div>
-    <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">Not all signals stay relevant forever. Decay windows determine how long each signal type contributes to the score before it fades.</div>
-    <div class="grid-4" style="margin-bottom:16px;">
-      ${[
-        ['Intent Data','90 days','var(--blue)','Decays after 90 days with no new activity'],
-        ['Job Changes','12 months','var(--green)','AI/L&D hire relevant for 12 months, then decays'],
-        ['Tech Signals','Stable','var(--purple)','Do not decay unless tech stack changes'],
-        ['Growth / M&A','6-12 months','var(--orange)','Event-based. Relevant for 6-12 months after the event'],
-      ].map(([name,window,color,desc]) => `
-        <div class="card" style="padding:14px 16px;border-top:3px solid ${color};">
-          <div style="font-size:15px;font-weight:700;color:var(--navy);">${name}</div>
-          <div style="font-size:14px;font-weight:700;color:${color};margin:4px 0;">${window}</div>
-          <div style="font-size:13px;color:var(--body-dark);">${desc}</div>
+    <!-- Example Scored Accounts -->
+    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Example: Signal Profile to Score to Tier</div>
+    <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">The same two accounts from Account Intelligence, now scored and tiered.</div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 20px;border-left:4px solid var(--blue);cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:16px;font-weight:700;color:var(--navy);">Acme Financial Services</div>
+          <span style="font-size:12px;font-weight:700;color:var(--blue);padding:4px 10px;border-radius:6px;background:var(--blue-light);border:1px solid var(--blue-pale);">P1: Expansion</span>
         </div>
-      `).join('')}
+        <div style="font-size:14px;color:var(--body-dark);margin-top:4px;">Score: 85/100 — Tier 1: Active Expansion (auto-qualified via Inspire)</div>
+        <div class="expand-body"><div style="font-size:13px;color:var(--body-dark);line-height:1.7;padding-top:10px;border-top:1px solid var(--border);margin-top:8px;">
+          <strong>AgentHub demo / Inspire 2026 (20 pts):</strong> Requested demo at Inspire. <span style="color:var(--green-dark);font-weight:600;">Auto-qualifies for Tier 1</span><br>
+          <strong>Renewal within 120 days (20 pts):</strong> Renewal in 87 days. <span style="color:var(--green-dark);font-weight:600;">+20</span><br>
+          <strong>New AI/L&D leadership hire (20 pts):</strong> CAIO hired 3 months ago. <span style="color:var(--green-dark);font-weight:600;">+20</span><br>
+          <strong>High platform engagement (15 pts):</strong> Top quartile, 2,400 MAU. <span style="color:var(--green-dark);font-weight:600;">+15</span><br>
+          <strong>Knowledge fragmentation (10 pts):</strong> SharePoint + Confluence + Slack. <span style="color:var(--green-dark);font-weight:600;">+10</span><br>
+          <strong>Support tickets (10 pts):</strong> No relevant tickets. <span style="color:var(--muted);font-weight:600;">+0</span><br>
+          <strong>Public skills initiative (5 pts):</strong> No announcement found. <span style="color:var(--muted);font-weight:600;">+0</span><br>
+          <div style="margin-top:8px;padding:8px 12px;border-radius:8px;background:#FEF9C3;border:1px solid #CA8A04;font-weight:700;color:#CA8A04;">Total: 85/100 — Tier 1: Active Expansion</div>
+        </div></div>
+      </div>
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 20px;border-left:4px solid var(--orange);cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:16px;font-weight:700;color:var(--navy);">Meridian Health Systems</div>
+          <span style="font-size:12px;font-weight:700;color:var(--orange);padding:4px 10px;border-radius:6px;background:var(--orange-light);border:1px solid #FED7AA;">P2: Net-New</span>
+        </div>
+        <div style="font-size:14px;color:var(--body-dark);margin-top:4px;">Score: 85/100 — Tier 1: Active ABM</div>
+        <div class="expand-body"><div style="font-size:13px;color:var(--body-dark);line-height:1.7;padding-top:10px;border-top:1px solid var(--border);margin-top:8px;">
+          <strong>Active intent (25 pts):</strong> High intent on "LMS alternatives" and "AI corporate training." <span style="color:var(--green-dark);font-weight:600;">+25</span><br>
+          <strong>New AI/L&D hire (20 pts):</strong> VP of Learning hired 2 months ago. <span style="color:var(--green-dark);font-weight:600;">+20</span><br>
+          <strong>Running legacy LMS (15 pts):</strong> SuccessFactors Learning deployed. <span style="color:var(--green-dark);font-weight:600;">+15</span><br>
+          <strong>Deploying Copilot/Glean (15 pts):</strong> Microsoft Copilot org-wide. <span style="color:var(--green-dark);font-weight:600;">+15</span><br>
+          <strong>LMS renewal (10 pts):</strong> No data on timing. <span style="color:var(--muted);font-weight:600;">+0</span><br>
+          <strong>Public skills initiative (10 pts):</strong> CEO "skills-first workforce" in Q1 earnings. <span style="color:var(--green-dark);font-weight:600;">+10</span><br>
+          <strong>Rapid growth / M&A (5 pts):</strong> No significant activity. <span style="color:var(--muted);font-weight:600;">+0</span><br>
+          <div style="margin-top:8px;padding:8px 12px;border-radius:8px;background:#FEF9C3;border:1px solid #CA8A04;font-weight:700;color:#CA8A04;">Total: 85/100 — Tier 1: Active ABM</div>
+        </div></div>
+      </div>
     </div>
 
     <!-- Account Activation -->
     <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Account Activation</div>
     <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">Before any campaign runs, every Tier 1 account needs three things: who the buyers are, their contact details, and where our coverage gaps sit. Without this, we run campaigns at company logos instead of at the people who make the decision.</div>
     <div class="grid-2" style="margin-bottom:4px;">
-      <div class="card" style="padding:18px 20px;border-left:4px solid var(--blue);">
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:18px 20px;border-left:4px solid var(--blue);cursor:pointer;">
         <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px;">Program 1: Fill the Gaps</div>
         <div style="font-size:14px;color:var(--body-dark);line-height:1.65;">
-          We already have relationships. CSM/AM knows the CLO who bought the LMS. But AgentHub brings new stakeholders (Head of AI, CISO, IT Director) who were not part of the original purchase.<br><br>
+          We already have relationships. CSM/AM knows the CLO who bought the LMS. But AgentHub brings new stakeholders (Head of AI, CISO, IT Director) who were not part of the original purchase.
+        </div>
+        <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.65;padding-top:10px;">
           <strong>Steps:</strong> CSM/AM debrief to map the org, ask the existing champion to map the committee, acquire missing contacts via ZoomInfo/LinkedIn.<br><br>
           <strong>Coverage target:</strong> 4 of 7 buying committee roles at each Tier 1 account. 100% on CLO and CHRO is non-negotiable.
-        </div>
+        </div></div>
       </div>
-      <div class="card" style="padding:18px 20px;border-left:4px solid var(--orange);">
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:18px 20px;border-left:4px solid var(--orange);cursor:pointer;">
         <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px;">Program 2: Build from Scratch</div>
         <div style="font-size:14px;color:var(--body-dark);line-height:1.65;">
-          No existing relationship. Identify the actual people behind the buying committee roles at each Tier 1 ABM account. This is the foundation of multi-stakeholder ABM.<br><br>
+          No existing relationship. Identify the actual people behind the buying committee roles at each Tier 1 ABM account. This is the foundation of multi-stakeholder ABM.
+        </div>
+        <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.65;padding-top:10px;">
           <strong>Steps:</strong> ZoomInfo for contacts matching title aliases, validate with LinkedIn Sales Navigator, BDR discovery calls to fill remaining gaps.<br><br>
           <strong>Coverage target:</strong> 3-4 of 7 roles. Accounts with fewer than 3 contacts get downgraded to Tier 2 until coverage improves.
-        </div>
+        </div></div>
       </div>
     </div>
 
@@ -886,6 +1026,7 @@ function renderMessaging() {
   document.getElementById('tabContent').innerHTML = `
     <!-- Layer 1: Core Narrative -->
     <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Layer 1: Core Positioning Narrative</div>
+    <div style="font-size:14px;color:var(--body-dark);margin-bottom:4px;">The universal story that works across every audience. Four parts build the argument: define the problem, show the consequence, present the solution, and land the differentiator.</div>
     <div style="font-size:13px;color:#6366F1;font-weight:600;margin-bottom:12px;">Click any card to expand the full narrative</div>
     <div class="grid-2" style="margin-bottom:20px;">
       <div>
@@ -916,6 +1057,7 @@ function renderMessaging() {
 
     <!-- Layer 2: Competitive Positioning -->
     <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Layer 2: Competitive Positioning</div>
+    <div style="font-size:14px;color:var(--body-dark);margin-bottom:4px;">When a specific competitor is in the deal, these lines sharpen the narrative. Each includes a core sound bite plus secondary angles for coexistence and feature depth.</div>
     <div style="font-size:13px;color:#6366F1;font-weight:600;margin-bottom:12px;">Click any competitor for secondary lines and angles</div>
     <div class="grid-2" style="margin-bottom:20px;">
       ${[
@@ -950,16 +1092,16 @@ function renderMessaging() {
         ['CISO','Gatekeeper','red','Data governance, access control','Permissions-aware, SOC 2, auditable. Works inside your existing security model.','<circle cx="20" cy="15" r="6.5" fill="white"/><ellipse cx="20" cy="33" rx="10" ry="8" fill="white"/><path d="M16 28l4-4 4 4" stroke="#0F172A" stroke-width="2" fill="none"/>'],
         ['L&D Manager','Evaluator','gray','Daily workload, content freshness','Agents draft courses from your knowledge. You review and publish, not build from scratch.','<circle cx="20" cy="14" r="6" fill="white"/><ellipse cx="20" cy="33" rx="10" ry="8" fill="white"/><path d="M18 18c2-2 4 0 4 0" stroke="#0F172A" stroke-width="1.5" fill="none"/>'],
       ].map(([role,type,color,cares,vp,avatar]) => `
-        <div class="card" style="padding:16px 18px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;cursor:pointer;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
             <svg width="36" height="36" viewBox="0 0 40 40" style="flex-shrink:0;"><circle cx="20" cy="20" r="20" fill="var(--navy)"/>${avatar}</svg>
             <div style="display:flex;align-items:center;gap:8px;">
               <div style="font-size:15px;font-weight:700;color:var(--navy);">${role}</div>
               ${tag(type,color)}
             </div>
           </div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">${cares}</div>
-          <div style="font-size:14px;color:var(--body-dark);line-height:1.55;">"${vp}"</div>
+          <div style="font-size:13px;color:var(--muted);">${cares}</div>
+          <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.55;padding-top:8px;">"${vp}"</div></div>
         </div>
       `).join('')}
     </div>
@@ -967,19 +1109,20 @@ function renderMessaging() {
     <!-- Decision Logic -->
     <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">How to Turn Account Signals into Persona-Specific Outreach</div>
     <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">At scale, 40-75 Tier 1 accounts with 3-4 personas each means 150-300 personalized touchpoints to create. This 5-step logic standardizes the approach so every touchpoint is signal-driven and persona-specific.</div>
-    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:stretch;">
       ${[
         ['1','Pull account profile','Start with the account signal profile from Scoring. Which of the 7 signals are active for this account?','var(--blue)'],
         ['2','Match to persona','Check the relevance map below. Which of this account\'s active signals matter to the persona you are reaching?','var(--green)'],
         ['3','Lead with hook','Highest-weighted relevant signal becomes the opening line. Second-highest reinforces it.','var(--purple)'],
-        ['4','Layer competitive','If Copilot or Glean is deployed, weave in the positioning line from Layer 2','var(--orange)'],
+        ['4','Layer competitive','If a competitor is present in the account, weave in the relevant positioning line from Layer 2','var(--orange)'],
         ['5','Anchor on value prop','Close with the persona value prop from Layer 3. This is the universal close for that stakeholder.','var(--red)'],
-      ].map(([num,title,desc,color]) => `
-        <div class="card" style="padding:14px 16px;flex:1;min-width:160px;border-top:3px solid ${color};">
+      ].map(([num,title,desc,color], idx) => `
+        <div class="card" style="padding:14px 16px;flex:1;min-width:140px;border-top:3px solid ${color};">
           <div style="font-size:24px;font-weight:800;color:${color};margin-bottom:4px;">${num}</div>
           <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px;">${title}</div>
           <div style="font-size:13px;color:var(--body-dark);line-height:1.5;">${desc}</div>
         </div>
+        ${idx < 4 ? '<div style="display:flex;align-items:center;font-size:22px;color:var(--muted);font-weight:700;flex-shrink:0;">→</div>' : ''}
       `).join('')}
     </div>
 
@@ -1002,6 +1145,93 @@ function renderMessaging() {
         </table>
       </div>
       </div>
+    </div>
+
+    <!-- Outreach Examples -->
+    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;margin-top:28px;">The 5 Steps in Action: Signal-Driven, Persona-Specific Outreach</div>
+    <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">The same two accounts from Account Intelligence and Scoring, now turned into persona-specific outreach using the decision logic above.</div>
+    <div class="grid-2" style="margin-bottom:4px;">
+
+      <!-- Acme → CLO -->
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:18px 20px;border-left:4px solid var(--blue);cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div style="font-size:16px;font-weight:700;color:var(--navy);">Acme Financial Services → CLO</div>
+          <span class="tag tag-blue">P1: Expansion</span>
+        </div>
+        <div style="font-size:13px;color:var(--muted);">5-step logic applied to existing customer outreach</div>
+        <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.7;padding-top:12px;">
+          <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 1: Account Signals</div>
+            AgentHub demo at Inspire (active) · New CAIO hired 3 months ago (active) · Renewal in 87 days (active) · Knowledge fragmented across SharePoint, Confluence, Slack (active) · Top-quartile platform engagement (active)
+          </div>
+          <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 2: Persona Match (CLO)</div>
+            CLO cares about: Inspire demo request ✓ · New CAIO creating mandate ✓ · Knowledge fragmentation ✓ · Renewal timing ✓
+          </div>
+          <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 3: Lead with Hook</div>
+            Primary: Inspire demo request (highest weight, explicit intent). Secondary: New CAIO creating transformation mandate.
+          </div>
+          <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 4: Competitive Layer</div>
+            No Copilot or Glean deployed. Skip competitive positioning. Pure expansion story.
+          </div>
+          <div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 5: Persona Value Prop</div>
+            CLO: "Agents create learning from your own knowledge. Your team shifts from course builders to program strategists."
+          </div>
+          <div style="padding:14px 18px;border-radius:10px;background:var(--blue-light);border:1px solid var(--blue-pale);">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--blue);margin-bottom:8px;">Resulting Outreach</div>
+            <div style="font-size:14px;color:var(--body-dark);line-height:1.7;">
+              <strong>Hook:</strong> Following up on your AgentHub demo request at Inspire. I noticed your team also brought on a Chief AI Officer recently, so the timing here might be worth a conversation.<br><br>
+              <strong>Bridge:</strong> With knowledge spread across SharePoint, Confluence, and Slack, your L&D team is probably spending more time finding and packaging content than designing programs that move the needle.<br><br>
+              <strong>Product:</strong> AgentHub reads across all three sources and generates structured learning automatically. Your team shifts from course builders to program strategists, and you can tie the output to measurable skills.<br><br>
+              <strong>CTA:</strong> With your renewal coming up in about 90 days, would a 30-minute walkthrough of how this connects to your current Docebo setup be worth the time?
+            </div>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- Meridian → CHRO -->
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:18px 20px;border-left:4px solid var(--orange);cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div style="font-size:16px;font-weight:700;color:var(--navy);">Meridian Health Systems → CHRO</div>
+          <span class="tag tag-amber">P2: Net-New</span>
+        </div>
+        <div style="font-size:13px;color:var(--muted);">5-step logic applied to net-new enterprise outreach</div>
+        <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.7;padding-top:12px;">
+          <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 1: Account Signals</div>
+            High intent on "LMS alternatives" and "AI corporate training" (active) · VP of L&D hired 2 months ago (active) · SuccessFactors Learning deployed (active) · Microsoft Copilot deployed org-wide (active) · CEO "skills-first workforce" on Q1 earnings call (active) · LMS renewal timing unknown (inactive) · No significant growth or M&A activity (inactive)
+          </div>
+          <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 2: Persona Match (CHRO)</div>
+            CHRO cares about: Active intent ✓ · New VP L&D hire ✓ · Legacy LMS ✓ · Copilot deployed ✓ · Skills initiative ✓ — all five signals are relevant
+          </div>
+          <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 3: Lead with Hook</div>
+            Primary: Active intent on LMS alternatives (25 pts, highest weight). Secondary: New VP L&D hire with transformation mandate (20 pts).
+          </div>
+          <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 4: Competitive Layer</div>
+            Copilot deployed org-wide. Use Microsoft positioning: "Copilot gives answers, but it cannot prove those answers became actual capability."
+          </div>
+          <div style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:6px;">Step 5: Persona Value Prop</div>
+            CHRO: "One platform replaces LMS + KM + skills tracking. Defensible workforce capability data tied to real outcomes."
+          </div>
+          <div style="padding:14px 18px;border-radius:10px;background:var(--orange-light);border:1px solid #FED7AA;">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--orange);margin-bottom:8px;">Resulting Outreach</div>
+            <div style="font-size:14px;color:var(--body-dark);line-height:1.7;">
+              <strong>Hook:</strong> Your team has been researching LMS alternatives, and with a new VP of L&D two months into the role, it sounds like there is a mandate to rethink how learning works at Meridian.<br><br>
+              <strong>Bridge:</strong> Your CEO put "skills-first workforce" on the record last quarter. The challenge is that SuccessFactors tracks course completions and Copilot gives answers, but neither one can tell your board whether people actually gained the skills the business needs.<br><br>
+              <strong>Product:</strong> AgentHub closes that loop. It reads knowledge sources, generates structured learning, and ties outcomes to measurable skills. It works alongside Copilot, not instead of it. One platform replacing the LMS, knowledge management, and skills tracking stack.<br><br>
+              <strong>CTA:</strong> Would a 20-minute walkthrough of how this maps to a healthcare L&D environment be worth a conversation?
+            </div>
+          </div>
+        </div></div>
+      </div>
+
     </div>
 
     ${takeaway('<strong>Takeaway:</strong> The messaging is not one pitch deck. It is a decision logic that combines the highest-weighted account signal, the target persona, and the competitive context into a personalized hook. That logic scales across 150-300 touchpoints without losing specificity.')}
@@ -1041,13 +1271,18 @@ function renderPrograms() {
         <button class="toggle-btn ${isP1?'active':''}" style="${isP1?'background:'+color+';color:white;':''}" onclick="programsMode='p1';renderPrograms();">Program 1: Expansion</button>
         <button class="toggle-btn ${!isP1?'active':''}" style="${!isP1?'background:'+color+';color:white;':''}" onclick="programsMode='p2';renderPrograms();">Program 2: Net-New</button>
       </div>
-      <span style="font-size:13px;color:#6366F1;font-weight:600;">Click any campaign to expand</span>
+      <span style="font-size:13px;color:#6366F1;font-weight:600;">Click a tier heading to reveal campaigns, then click any campaign to expand details</span>
     </div>
 
     ${isP1 ? `
     <!-- P1: Expansion Campaigns -->
-    <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--blue);">Tier 1: Active Expansion (Score 55+)</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+    <div class="tier-wrap">
+    <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--gold);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);">Tier 1: Active Expansion (Score 55+) &mdash; 6 campaigns + content assets</div>
+      <span class="tier-chevron">▾</span>
+    </div>
+    <div class="tier-body">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;padding-top:4px;">
       ${[
         ['Expansion Outreach Sequence','CSM/AM + Marketing','SalesLoft','Personalized outreach from CSM/AM introducing AgentHub. Messaging tailored to the account signals. Includes readiness assessment link and personalized video. A conversation starter from someone they already know.<br><strong>CTAs:</strong> Assessment, demo request, meeting request','Triggered when account enters Tier 1 or 90-120 days pre-renewal'],
         ['In-Product Messaging','Marketing','Gainsight PX','In-app messages shown to existing LMS users at Tier 1 accounts. Targeted to admins and L&D managers. "Did you know you can generate this course automatically from your Confluence docs?" Reaches them at the moment of pain.<br><strong>CTAs:</strong> Assessment link, demo request','Triggered by in-product behavior (creating a new course, building content manually)'],
@@ -1056,7 +1291,7 @@ function renderPrograms() {
         ['New Stakeholder Engagement','Marketing + BDR','Influ2 + SalesLoft','Targets buying committee members not part of the original LMS purchase (Head of AI, CISO, IT Director). Influ2 serves awareness ads. BDR runs parallel outreach. Goal: build familiarity before the CSM/AM brings them into the conversation.<br><strong>CTAs:</strong> Content download, assessment link, meeting request','Starts as soon as new stakeholders are identified'],
         ['Customer Advisory Board / Beta Access','Marketing + Product','Direct invite','Invites Tier 1 accounts to participate in the AgentHub beta or customer advisory board. Early access, co-creation momentum. These become the first reference logos.<br><strong>CTAs:</strong> Beta enrollment, advisory board participation','Ongoing through pre-GA period'],
       ].map(([name,owner,channel,desc,timing]) => `
-        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--blue);cursor:pointer;">
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--gold);cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:15px;font-weight:700;color:var(--navy);">${name}</div>
             <span style="font-size:12px;color:var(--muted);">${channel}</span>
@@ -1069,7 +1304,7 @@ function renderPrograms() {
       `).join('')}
     </div>
 
-    <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--blue);cursor:pointer;">
+    <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--gold);cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:15px;font-weight:700;color:var(--navy);">Tier 1 Content Assets</div>
             <span style="font-size:12px;color:var(--muted);">5 assets</span>
@@ -1083,15 +1318,23 @@ function renderPrograms() {
           </div></div>
         </div>
     </div>
-    <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--amber-dark);">Tier 2: Warm & Monitor (Score 25-54)</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+    </div><!-- /tier-body -->
+    </div><!-- /tier-wrap Tier 1 -->
+
+    <div class="tier-wrap">
+    <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--silver);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);">Tier 2: Signal-Driven Nurture (Score 25-54) &mdash; 3 campaigns + signal monitoring</div>
+      <span class="tier-chevron">▾</span>
+    </div>
+    <div class="tier-body">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;padding-top:4px;">
       ${[
         ['AgentHub Email Program','Marketing','Email automation','3-4 email awareness sequence introducing AgentHub. Transitions into monthly emails mixing product updates, content, and webinar invitations.<br><strong>CTAs:</strong> Webinar registration, assessment link','Awareness sequence 6-8 weeks, then monthly'],
         ['Customer Webinar Series','Marketing + Product','Virtual events','Monthly webinars showcasing AgentHub capabilities, featuring product demos and early adopter stories. Positioned as "exclusive preview for Docebo customers." Attendance signals interest.<br><strong>CTAs:</strong> Demo request, assessment link','Monthly'],
         ['Reactive CSM/AM Outreach','Sales (triggered by Marketing)','CSM/AM conversation','When a Tier 2 customer engages (assessment, webinar, content download), marketing flags the engagement to the CSM/AM for a warm follow-up.<br><strong>CTAs:</strong> Meeting request, demo request','Triggered by engagement events'],
         ['Signal Monitoring','Marketing','UserGems + Intent provider','Active monitoring for signal and engagement changes. New signal or strong engagement triggers re-scoring and potential promotion to Tier 1.','Automated, ongoing'],
       ].map(([name,owner,channel,desc,timing]) => `
-        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--amber-dark);cursor:pointer;">
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--silver);cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:15px;font-weight:700;color:var(--navy);">${name}</div>
             <span style="font-size:12px;color:var(--muted);">${channel}</span>
@@ -1103,15 +1346,22 @@ function renderPrograms() {
         </div>
       `).join('')}
     </div>
+    </div><!-- /tier-body -->
+    </div><!-- /tier-wrap Tier 2 -->
 
-    <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--muted);">Tier 3: Standard Nurture (Score below 25)</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;">
+    <div class="tier-wrap">
+    <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--bronze);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);">Tier 3: Awareness Only (Score below 25) &mdash; 2 campaigns + signal monitoring</div>
+      <span class="tier-chevron">▾</span>
+    </div>
+    <div class="tier-body">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;padding-top:4px;">
       ${[
         ['Standard Customer Newsletter','Marketing','Email','Regular Docebo product updates, platform tips, community highlights. AgentHub mentioned alongside other product news. Periodically includes assessment link as a soft CTA.','Monthly'],
         ['Annual Customer Event Invitations','Marketing','Email + events','Invitations to Inspire and regional events. Naturally expose Tier 3 accounts to AgentHub messaging.','Event-driven'],
         ['Signal Monitoring','Marketing','UserGems + Intent provider','Passive monitoring. New signals trigger re-scoring and potential promotion to Tier 2.','Automated, ongoing'],
       ].map(([name,owner,channel,desc,timing]) => `
-        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--muted);cursor:pointer;">
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--bronze);cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:15px;font-weight:700;color:var(--navy);">${name}</div>
             <span style="font-size:12px;color:var(--muted);">${channel}</span>
@@ -1123,10 +1373,17 @@ function renderPrograms() {
         </div>
       `).join('')}
     </div>
+    </div><!-- /tier-body -->
+    </div><!-- /tier-wrap Tier 3 -->
     ` : `
     <!-- P2: Net-New Campaigns -->
-    <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--green);">Category Education (Cross-Tier Foundation)</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+    <div class="tier-wrap">
+    <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--green);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);">Category Education (Cross-Tier Foundation) &mdash; 3 campaigns</div>
+      <span class="tier-chevron">▾</span>
+    </div>
+    <div class="tier-body">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;padding-top:4px;">
       ${[
         ['Thought Leadership Content','Marketing','Blog, LinkedIn, resource center','Teach the category before selling the product. "Why your AI search tool cannot close the skills gap." "The difference between answering questions and proving capability." Build the language prospects will use to describe the problem internally.<br><strong>CTAs:</strong> Content engagement, assessment link','Ongoing, compounding'],
         ['Webinar Program','Marketing + Product','Virtual events','Monthly webinars on category topics. Feature Docebo product leaders + guest speakers. Build audience and capture interest.<br><strong>CTAs:</strong> Demo request, assessment link, content download','Monthly'],
@@ -1144,9 +1401,16 @@ function renderPrograms() {
         </div>
       `).join('')}
     </div>
+    </div><!-- /tier-body -->
+    </div><!-- /tier-wrap Category Education -->
 
-    <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--amber-dark);">Paid Demand Capture (Cross-Tier)</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+    <div class="tier-wrap">
+    <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--amber-dark);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);">Paid Demand Capture (Cross-Tier) &mdash; 2 campaigns</div>
+      <span class="tier-chevron">▾</span>
+    </div>
+    <div class="tier-body">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;padding-top:4px;">
       ${[
         ['Paid Search (High-Intent Keywords)','Marketing','Google Ads','Target high-intent terms: "LMS alternative," "AI learning platform," "Cornerstone alternative." Tier 1 engagement triggers BDR alert. Tier 2-3 enters nurture and triggers re-scoring.<br><strong>CTAs:</strong> Demo request, assessment link','Always on'],
         ['Paid Search (Solution-Aware Keywords)','Marketing','Google Ads','Broader terms: "how to close skills gaps," "AI for corporate learning." Earlier-stage researchers enter nurture.<br><strong>CTAs:</strong> Content download, assessment link, webinar registration','Always on'],
@@ -1163,9 +1427,16 @@ function renderPrograms() {
         </div>
       `).join('')}
     </div>
+    </div><!-- /tier-body -->
+    </div><!-- /tier-wrap Paid Demand -->
 
-    <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--blue);">Tier 1: Active ABM (Score 50+)</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+    <div class="tier-wrap">
+    <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--gold);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);">Tier 1: Active ABM (Score 50+) &mdash; 6 campaigns + content assets</div>
+      <span class="tier-chevron">▾</span>
+    </div>
+    <div class="tier-body">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;padding-top:4px;">
       ${[
         ['Paid Media Program','Marketing','LinkedIn Ads + Influ2 + Retargeting','Coordinated paid media targeting buying committee members. LinkedIn account-targeted ads serve thought leadership. InMail goes to CLOs and CHROs quarterly. Influ2 serves persona-specific display ads in parallel with BDR outreach.','Influ2 and LinkedIn start 1-2 weeks before BDR outreach'],
         ['BDR Outreach','BDR + Marketing','SalesLoft','Persona-specific outreach to 3-4 buying committee contacts per account. 5-7 touches over 3-4 weeks (email, LinkedIn, phone). Signal-based hooks from the messaging framework.<br><strong>CTAs:</strong> Assessment (CLO), calculator (CHRO), sandbox (Head of AI), demo request','Starts once account activation is complete'],
@@ -1174,7 +1445,7 @@ function renderPrograms() {
         ['High-Touch Engagement','Sales + Field Marketing','Live events, roundtables, executive briefings','Executive strategy conversations, small-format roundtable events (8-12 attendees) with L&D, HR, and AI leaders. Not product pitches. Thought leadership that positions Docebo as category leader.<br><strong>CTAs:</strong> Follow-up meeting, technical evaluation, demo request','Quarterly in key markets (NYC, SF, Toronto, Chicago)'],
         ['Partnership Co-Marketing','Marketing + Partnerships','Joint events, co-branded content','Leverage consulting firms, SI partners, and technology partners. Co-host events, co-create content, build referral paths.<br><strong>CTAs:</strong> Joint consultation, partner-referred demo','Building in first 90 days'],
       ].map(([name,owner,channel,desc,timing]) => `
-        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--blue);cursor:pointer;">
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--gold);cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:15px;font-weight:700;color:var(--navy);">${name}</div>
             <span style="font-size:12px;color:var(--muted);">${channel}</span>
@@ -1187,7 +1458,7 @@ function renderPrograms() {
       `).join('')}
     </div>
 
-    <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--blue);cursor:pointer;">
+    <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--gold);cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:15px;font-weight:700;color:var(--navy);">Tier 1 Content Assets</div>
             <span style="font-size:12px;color:var(--muted);">5 assets</span>
@@ -1201,14 +1472,22 @@ function renderPrograms() {
           </div></div>
         </div>
     </div>
-    <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--amber-dark);">Tier 2: Signal-Driven Nurture (Score 25-49)</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+    </div><!-- /tier-body -->
+    </div><!-- /tier-wrap Tier 1 -->
+
+    <div class="tier-wrap">
+    <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--silver);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);">Tier 2: Signal-Driven Nurture (Score 25-49) &mdash; 2 campaigns + signal monitoring</div>
+      <span class="tier-chevron">▾</span>
+    </div>
+    <div class="tier-body">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;padding-top:4px;">
       ${[
         ['ABM-Lite Paid Media','Marketing','LinkedIn Matched Audiences','Account-targeted ads with category education content. Lower spend per account than Tier 1. No BDR outreach, no Influ2, no direct mail.','Always on'],
         ['Nurture Email Sequences','Marketing','Email automation','Automated nurture mixing thought leadership, category education, and product content. Includes assessment link.','Ongoing'],
         ['Signal Monitoring','Marketing','UserGems + Intent provider','Active monitoring for signal changes. Any trigger prompts re-scoring and potential promotion to Tier 1.','Automated, ongoing'],
       ].map(([name,owner,channel,desc,timing]) => `
-        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--amber-dark);cursor:pointer;">
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--silver);cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:15px;font-weight:700;color:var(--navy);">${name}</div>
             <span style="font-size:12px;color:var(--muted);">${channel}</span>
@@ -1220,14 +1499,21 @@ function renderPrograms() {
         </div>
       `).join('')}
     </div>
+    </div><!-- /tier-body -->
+    </div><!-- /tier-wrap Tier 2 -->
 
-    <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--muted);">Tier 3: Awareness Only (Score below 25)</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;">
+    <div class="tier-wrap">
+    <div class="tier-header" onclick="toggleTier(this)" style="border-bottom-color:var(--bronze);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);">Tier 3: Awareness Only (Score below 25) &mdash; 1 campaign + signal monitoring</div>
+      <span class="tier-chevron">▾</span>
+    </div>
+    <div class="tier-body">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;padding-top:4px;">
       ${[
         ['Category Education Content Only','Marketing','Blog, resource center, social','Category education content from cross-tier foundation. No account-specific campaigns. No paid media. No outreach.','Ongoing'],
         ['Signal Monitoring','Marketing','UserGems + Intent provider','Passive monitoring. New signals trigger re-scoring and potential promotion to Tier 2.','Automated, ongoing'],
       ].map(([name,owner,channel,desc,timing]) => `
-        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--muted);cursor:pointer;">
+        <div class="card hover" onclick="toggleExpand(this)" style="padding:14px 18px;border-left:4px solid var(--bronze);cursor:pointer;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:15px;font-weight:700;color:var(--navy);">${name}</div>
             <span style="font-size:12px;color:var(--muted);">${channel}</span>
@@ -1239,41 +1525,66 @@ function renderPrograms() {
         </div>
       `).join('')}
     </div>
+    </div><!-- /tier-body -->
+    </div><!-- /tier-wrap Tier 3 -->
     `}
 
     <!-- Lead Capture and Qualification Flow -->
-    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">How Campaigns Feed the Funnel</div>
-    <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">Every CTA maps to a funnel stage. This is how tiered campaigns produce the MQLs, SALs, and SQLs modeled in the next tab.</div>
-    <div class="grid-3" style="margin-bottom:16px;">
-      <div class="card" style="padding:16px 18px;border-top:3px solid var(--green);">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">Top of Funnel</div>
-        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">
+    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;margin-top:48px;">How Campaigns Feed the Funnel</div>
+    <div style="font-size:14px;color:var(--body-dark);margin-bottom:16px;">Every CTA maps to a funnel stage. This is how tiered campaigns produce the MQLs, SALs, and SQLs modeled in the next tab.</div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:16px;">
+      <!-- ToF -->
+      <div onclick="toggleExpand(this)" style="width:100%;background:var(--green);color:white;padding:16px 24px;border-radius:12px 12px 4px 4px;cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:16px;font-weight:700;">Top of Funnel</div>
+          <div style="font-size:12px;opacity:0.85;">Awareness &amp; Engagement</div>
+        </div>
+        <div class="expand-body"><div style="font-size:14px;line-height:1.6;padding-top:10px;opacity:0.95;">
           Content downloads, webinar registrations, blog engagement, ad clicks. Captured as marketing-engaged contacts. For Tier 1, any engagement from a buying committee contact is flagged to BDR immediately.
-        </div>
+        </div></div>
       </div>
-      <div class="card" style="padding:16px 18px;border-top:3px solid var(--blue);">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">Middle of Funnel (MQL)</div>
-        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">
+      <!-- MoF -->
+      <div onclick="toggleExpand(this)" style="width:82%;background:var(--blue);color:white;padding:16px 24px;border-radius:4px;cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:16px;font-weight:700;">Middle of Funnel</div>
+          <div style="font-size:12px;opacity:0.85;">MQL</div>
+        </div>
+        <div class="expand-body"><div style="font-size:14px;line-height:1.6;padding-top:10px;opacity:0.95;">
           Demo requests, consultation bookings, assessment or calculator completion, competitive comparison downloads. These are MQLs. For Tier 1, they go directly to the assigned BDR/AE.
-        </div>
+        </div></div>
       </div>
-      <div class="card" style="padding:16px 18px;border-top:3px solid var(--navy);">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">Bottom of Funnel (SQL)</div>
-        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">
-          Executive meetings booked, technical evaluations requested, pricing discussions initiated. These are SQLs owned by the AE. MQL becomes SQL when: ICP fit, budget process, confirmed pain, and next step with a decision-maker.
+      <!-- BoF -->
+      <div onclick="toggleExpand(this)" style="width:62%;background:var(--navy);color:white;padding:16px 24px;border-radius:4px 4px 12px 12px;cursor:pointer;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:16px;font-weight:700;">Bottom of Funnel</div>
+          <div style="font-size:12px;opacity:0.85;">SQL</div>
         </div>
+        <div class="expand-body"><div style="font-size:14px;line-height:1.6;padding-top:10px;opacity:0.95;">
+          Executive meetings booked, technical evaluations requested, pricing discussions initiated. These are SQLs owned by the AE. MQL becomes SQL when: ICP fit, budget process, confirmed pain, and next step with a decision-maker.
+        </div></div>
       </div>
     </div>
 
     <!-- Tier Movement -->
-    <div class="card" style="padding:18px 22px;margin-bottom:4px;background:#F8FAFC;border:1px solid var(--border);">
-      <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;">Tier Movement</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
-        <div style="padding:10px 18px;border-radius:10px;background:var(--muted);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 3</div>
-        <div style="font-size:18px;color:var(--green-dark);">&#8594;</div>
-        <div style="padding:10px 18px;border-radius:10px;background:var(--amber-dark);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 2</div>
-        <div style="font-size:18px;color:var(--green-dark);">&#8594;</div>
-        <div style="padding:10px 18px;border-radius:10px;background:var(--blue);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 1</div>
+    <div class="card" style="padding:18px 22px;margin-bottom:4px;margin-top:48px;background:#F8FAFC;border:1px solid var(--border);">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px;">Signal Monitoring and Tier Movement</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:11px;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:0.5px;width:70px;text-align:right;">Promote</div>
+          <div style="padding:10px 18px;border-radius:10px;background:var(--bronze);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 3</div>
+          <div style="font-size:18px;color:var(--green-dark);">&#8594;</div>
+          <div style="padding:10px 18px;border-radius:10px;background:var(--silver);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 2</div>
+          <div style="font-size:18px;color:var(--green-dark);">&#8594;</div>
+          <div style="padding:10px 18px;border-radius:10px;background:var(--gold);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 1</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:11px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:0.5px;width:70px;text-align:right;">Demote</div>
+          <div style="padding:10px 18px;border-radius:10px;background:var(--gold);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 1</div>
+          <div style="font-size:18px;color:#DC2626;">&#8594;</div>
+          <div style="padding:10px 18px;border-radius:10px;background:var(--silver);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 2</div>
+          <div style="font-size:18px;color:#DC2626;">&#8594;</div>
+          <div style="padding:10px 18px;border-radius:10px;background:var(--bronze);color:white;font-weight:700;font-size:14px;text-align:center;">Tier 3</div>
+        </div>
       </div>
       <div style="font-size:14px;color:var(--body-dark);line-height:1.65;">
         <strong>Promotion (up):</strong> New signals fire, engagement increases, or assessment completed. Can happen immediately via promotion triggers. Scores update weekly, tiers reviewed monthly.<br>
@@ -1289,21 +1600,21 @@ function renderPrograms() {
 let funnelMode = 'combined';
 function renderFunnel() {
   document.getElementById('tabContent').innerHTML = `
-    <!-- Summary Stats -->
-    <div class="grid-4" style="margin-bottom:20px;">
-      ${(funnelMode==='p1' ? [['$3M','Quarterly pipeline','var(--blue)'],['12','Opportunities needed','var(--blue)'],['34','MQL accounts needed','var(--blue)'],['$1.05M','Expected quarterly revenue','var(--green-dark)']] : funnelMode==='p2' ? [['$5M','Quarterly pipeline','var(--orange)'],['20','Opportunities needed','var(--orange)'],['104','MQL accounts needed','var(--orange)'],['$1.125M','Expected quarterly revenue','var(--green-dark)']] : [['$8M','Combined quarterly pipeline','var(--navy)'],['32','Opportunities needed','var(--navy)'],['138','MQL accounts needed','var(--navy)'],['$2.18M','Expected quarterly revenue','var(--green-dark)']]  ).map(([v,l,c]) =>
-        `<div class="card" style="padding:18px;text-align:center;border-top:3px solid ${c};"><div class="stat-value" style="color:${c};">${v}</div><div class="stat-label">${l}</div></div>`
-      ).join('')}
-    </div>
-
     <!-- Toggle -->
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;">
       <div class="toggle-group">
         <button class="toggle-btn ${funnelMode==='combined'?'active':''}" style="${funnelMode==='combined'?'background:var(--navy);color:white;':''}" onclick="funnelMode='combined';renderFunnel();">Combined View</button>
         <button class="toggle-btn ${funnelMode==='p1'?'active':''}" style="${funnelMode==='p1'?'background:#1E40AF;color:white;':''}" onclick="funnelMode='p1';renderFunnel();">Program 1: Expansion ($3M)</button>
-        <button class="toggle-btn ${funnelMode==='p2'?'active':''}" style="${funnelMode==='p2'?'background:#C2410C;color:white;':''}" onclick="funnelMode='p2';renderFunnel();">Program 2: Net-New ($5M)</button>
+        <button class="toggle-btn ${funnelMode==='p2'?'active':''}" style="${funnelMode==='p2'?'background:#C2410C;color:white;':''}" onclick="funnelMode='p2';renderFunnel();">Program 2: Net-New ($6M)</button>
       </div>
       <span style="font-size:13px;color:#6366F1;font-weight:600;">Click any stage for conversion rationale</span>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid-4" style="margin-bottom:20px;">
+      ${(funnelMode==='p1' ? [['$3M','Quarterly pipeline','var(--blue)'],['12','Opportunities needed','var(--blue)'],['34','MQL accounts needed','var(--blue)'],['$1.05M','Expected quarterly revenue','var(--green-dark)']] : funnelMode==='p2' ? [['$6M','Quarterly pipeline','var(--orange)'],['20','Opportunities needed','var(--orange)'],['104','MQL accounts needed','var(--orange)'],['$1.35M','Expected quarterly revenue','var(--green-dark)']] : [['$9M','Combined quarterly pipeline','var(--navy)'],['32','Opportunities needed','var(--navy)'],['138','MQL accounts needed','var(--navy)'],['$2.4M','Expected quarterly revenue','var(--green-dark)']]  ).map(([v,l,c]) =>
+        `<div class="card" style="padding:18px;text-align:center;border-top:3px solid ${c};"><div class="stat-value" style="color:${c};">${v}</div><div class="stat-label">${l}</div></div>`
+      ).join('')}
     </div>
 
     ${funnelMode==='p1' ? `
@@ -1313,12 +1624,12 @@ function renderFunnel() {
         <div style="font-size:14px;color:var(--body-dark);margin-bottom:14px;">Avg deal: $250K ARR (AgentHub + Enterprise Knowledge + Skills Intelligence on existing LMS)</div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
           ${[
-            ['91 Engaged Accounts','92%','var(--blue)',0.95,'Existing customers engaging with AgentHub content. 300-500 NA enterprise customers, 91 needed = 18-30% engagement rate. Achievable with in-product messaging, CSM/AM outreach, and assessment.'],
-            ['34 MQLs','52%','var(--blue)',0.82,'Engaged-to-MQL: 35-40%. Higher than net-new because CSM/AM relationship and in-product messaging create warmer engagement. Assessment completion rate higher when pitch is "optimize what you already have."'],
-            ['24 SALs','44%','var(--blue)',0.7,'MQL-to-SAL: 70%. High because these are known customers. CSM/AM can quickly assess genuine interest based on relationship context.'],
-            ['12 Opportunities','36%','var(--blue)',0.58,'SAL-to-Opportunity: 50%. Higher than net-new because existing relationship, trust, and CSM/AM knows the account. Lower than ideal because AgentHub is pre-GA.'],
-            ['$3M Pipeline','32%','var(--blue)',0.52,'12 opportunities x $250K avg deal size = $3M quarterly pipeline target. Pipeline is the primary KPI. Everything upstream is a leading indicator.'],
-            ['$1.05M Revenue','28%','var(--green-dark)',0.46,'Win rate: 30-40% (using 35%). No competitive displacement needed, CSM/AM relationship is warm, no platform migration risk, renewal leverage creates a natural buying moment.'],
+            ['91 Engaged Accounts','92%','var(--blue)',0.50,'Existing customers engaging with AgentHub content. 300-500 NA enterprise customers, 91 needed = 18-30% engagement rate. Achievable with in-product messaging, CSM/AM outreach, and assessment.'],
+            ['34 MQLs','52%','var(--blue)',0.60,'Engaged-to-MQL: 35-40%. Higher than net-new because CSM/AM relationship and in-product messaging create warmer engagement. Assessment completion rate higher when pitch is "optimize what you already have."'],
+            ['24 SALs','44%','var(--blue)',0.70,'MQL-to-SAL: 70%. High because these are known customers. CSM/AM can quickly assess genuine interest based on relationship context.'],
+            ['12 Opportunities','36%','var(--blue)',0.80,'SAL-to-Opportunity: 50%. Higher than net-new because existing relationship, trust, and CSM/AM knows the account. Lower than ideal because AgentHub is pre-GA.'],
+            ['$3M Pipeline','32%','var(--blue)',0.90,'12 opportunities x $250K avg deal size = $3M quarterly pipeline target. Pipeline is the primary KPI. Everything upstream is a leading indicator.'],
+            ['$1.05M Revenue','28%','var(--green-dark)',1.0,'Win rate: 30-40% (using 35%). No competitive displacement needed, CSM/AM relationship is warm, no platform migration risk, renewal leverage creates a natural buying moment.'],
           ].map(([label,w,color,opacity,rationale]) => `
             <div class="hover" onclick="toggleExpand(this)" style="width:${w};background:${color};opacity:${opacity};color:white;text-align:center;padding:12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:15px;">
               ${label}
@@ -1331,7 +1642,7 @@ function renderFunnel() {
       <div class="card" style="padding:24px;border-left:4px solid var(--blue);">
         <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px;">Conversion Rates</div>
         ${[
-          ['Engaged to MQL','37.5%','CSM/AM + in-product messaging + assessment'],
+          ['Engaged to MQL','38%','CSM/AM + in-product messaging + assessment'],
           ['MQL to SAL','70%','Known customers, CSM/AM validates quickly'],
           ['SAL to Opportunity','50%','Existing relationship, trust, renewal leverage'],
           ['Win Rate','35%','No migration, warm relationship, renewal moment'],
@@ -1354,15 +1665,15 @@ function renderFunnel() {
     <div class="grid-2" style="margin-bottom:16px;">
       <div class="card" style="padding:24px;border-left:4px solid var(--orange);">
         <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Net-New Funnel</div>
-        <div style="font-size:14px;color:var(--body-dark);margin-bottom:14px;">Avg deal: $250K ARR (full platform replacement: LMS + AgentHub + Enterprise Knowledge + Skills Intelligence)</div>
+        <div style="font-size:14px;color:var(--body-dark);margin-bottom:14px;">Avg deal: $300K ARR (full platform replacement: LMS + AgentHub + Enterprise Knowledge + Skills Intelligence)</div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
           ${[
-            ['378 Engaged Accounts','92%','var(--orange)',0.95,'200-250 from outbound (40-50% of 500 universe) + 100-150 from inbound (Google Ads, SEO, webinars, conferences). Combined 300-400 per quarter achievable as programs mature.'],
-            ['104 MQLs','70%','var(--orange)',0.82,'Engaged-to-MQL: 25-30%. Assessment and Cost Calculator improve this. Without these tools, rate would be 10-15%. They turn content engagement into qualified, data-rich leads.'],
-            ['57 SALs','52%','var(--orange)',0.7,'MQL-to-SAL: 55%. ABM pre-qualification helps. Slightly depressed by new category: some MQLs are curiosity-driven, not genuine buying intent.'],
-            ['20 Opportunities','36%','var(--orange)',0.58,'SAL-to-Opportunity: 35%. Conservative for enterprise, pre-GA, new category. Many conversations stall on budget, timing, or building consensus for a pre-GA product.'],
-            ['$5M Pipeline','32%','var(--orange)',0.52,'20 opportunities x $250K avg deal size = $5M quarterly pipeline target. Pipeline is the primary KPI. Everything upstream is a leading indicator.'],
-            ['$1.125M Revenue','28%','var(--green-dark)',0.46,'Win rate: 20-25% (using 22.5%). Enterprise platform replacement, new category, pre-GA. Improves post-GA as proof points accumulate. Mature rate: 25-30%.'],
+            ['378 Engaged Accounts','92%','var(--orange)',0.50,'200-250 from outbound (40-50% of 500 universe) + 100-150 from inbound (Google Ads, SEO, webinars, conferences). Combined 300-400 per quarter achievable as programs mature.'],
+            ['104 MQLs','70%','var(--orange)',0.60,'Engaged-to-MQL: 25-30%. Assessment and Cost Calculator improve this. Without these tools, rate would be 10-15%. They turn content engagement into qualified, data-rich leads.'],
+            ['57 SALs','52%','var(--orange)',0.70,'MQL-to-SAL: 55%. ABM pre-qualification helps. Slightly depressed by new category: some MQLs are curiosity-driven, not genuine buying intent.'],
+            ['20 Opportunities','36%','var(--orange)',0.80,'SAL-to-Opportunity: 35%. Conservative for enterprise, pre-GA, new category. Many conversations stall on budget, timing, or building consensus for a pre-GA product.'],
+            ['$6M Pipeline','32%','var(--orange)',0.90,'20 opportunities x $300K avg deal size = $6M quarterly pipeline target. Pipeline is the primary KPI. Everything upstream is a leading indicator.'],
+            ['$1.35M Revenue','28%','var(--green-dark)',1.0,'Win rate: 20-25% (using 23%). Enterprise platform replacement, new category, pre-GA. Improves post-GA as proof points accumulate. Mature rate: 25-30%.'],
           ].map(([label,w,color,opacity,rationale]) => `
             <div class="hover" onclick="toggleExpand(this)" style="width:${w};background:${color};opacity:${opacity};color:white;text-align:center;padding:12px;border-radius:10px;cursor:pointer;font-weight:700;font-size:15px;">
               ${label}
@@ -1375,10 +1686,10 @@ function renderFunnel() {
       <div class="card" style="padding:24px;border-left:4px solid var(--orange);">
         <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px;">Conversion Rates</div>
         ${[
-          ['Engaged to MQL','27.5%','Assessment + calculator convert engagement to qualified leads'],
+          ['Engaged to MQL','28%','Assessment + calculator convert engagement to qualified leads'],
           ['MQL to SAL','55%','ABM pre-qualified, some curiosity-driven MQLs'],
           ['SAL to Opportunity','35%','Pre-GA, new category, budget not allocated'],
-          ['Win Rate','22.5%','Enterprise replacement, improves post-GA to 25-30%'],
+          ['Win Rate','23%','Enterprise replacement, improves post-GA to 25-30%'],
         ].map(([stage,rate,driver]) => `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
             <div>
@@ -1401,11 +1712,11 @@ function renderFunnel() {
         <table class="data-table">
           <thead><tr><th></th><th style="color:var(--blue);">P1: Expansion</th><th style="color:var(--orange);">P2: Net-New</th><th style="font-weight:800;">Total</th></tr></thead>
           <tbody>
-            <tr><td style="font-weight:600;">Pipeline target</td><td>$3M</td><td>$5M</td><td style="font-weight:700;">$8M</td></tr>
+            <tr><td style="font-weight:600;">Pipeline target</td><td>$3M</td><td>$6M</td><td style="font-weight:700;">$9M</td></tr>
             <tr><td style="font-weight:600;">Opportunities needed</td><td>12</td><td>20</td><td style="font-weight:700;">32</td></tr>
             <tr><td style="font-weight:600;">MQL accounts needed</td><td>34</td><td>104</td><td style="font-weight:700;">138</td></tr>
             <tr><td style="font-weight:600;">Engaged accounts needed</td><td>91</td><td>378</td><td style="font-weight:700;">469</td></tr>
-            <tr><td style="font-weight:600;">Expected quarterly revenue</td><td>~$1.05M</td><td>~$1.125M</td><td style="font-weight:700;">~$2.18M</td></tr>
+            <tr><td style="font-weight:600;">Expected quarterly revenue</td><td>~$1.05M</td><td>~$1.35M</td><td style="font-weight:700;">~$2.4M</td></tr>
           </tbody>
         </table>
       </div>
@@ -1414,19 +1725,29 @@ function renderFunnel() {
 
     <!-- Attribution -->
     <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Attribution Approach</div>
-    <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">ABM attribution is harder than standard demand gen because a single deal is touched by multiple channels across multiple stakeholders over months.</div>
-    <div class="grid-3" style="margin-bottom:16px;">
-      <div class="card" style="padding:16px 18px;border-top:3px solid var(--blue);">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">First-Touch (by Account)</div>
-        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">Which channel first brought this account into our pipeline? Informs top-of-funnel investment decisions.</div>
+    <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">ABM attribution is harder than standard demand gen because a single deal is touched by multiple channels across multiple stakeholders over months. Four models run in parallel, weighted differently.</div>
+    <div class="grid-4" style="margin-bottom:16px;">
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;border-top:3px solid var(--blue);cursor:pointer;">
+        <div style="font-size:15px;font-weight:700;color:var(--navy);">First-Touch (by Account)</div>
+        <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.6;padding-top:8px;">Which channel first brought this account into our pipeline? Informs top-of-funnel investment decisions.</div></div>
       </div>
-      <div class="card" style="padding:16px 18px;border-top:3px solid var(--green-dark);">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">Multi-Touch (by Account)</div>
-        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">Which channels touched this account during the deal cycle? Primary model for budget allocation. Prevents cutting channels that accelerate deals even if they do not source them.</div>
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;border-top:3px solid var(--green-dark);cursor:pointer;">
+        <div style="font-size:15px;font-weight:700;color:var(--navy);">Multi-Touch (by Account)</div>
+        <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.6;padding-top:8px;">Directional, not gospel. Shows which channels touched a deal, but tracked attribution misses the dark funnel. Useful for spotting patterns, not for final budget calls.</div></div>
       </div>
-      <div class="card" style="padding:16px 18px;border-top:3px solid var(--purple);">
-        <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">Closed-Won Analysis</div>
-        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;">Which channels contributed to actual closed revenue? Run on every closed deal. The ultimate truth of what works.</div>
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;border-top:3px solid var(--amber-dark);cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="font-size:15px;font-weight:700;color:var(--navy);">Self-Reported Attribution</div>
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--amber-light);color:var(--amber-dark);border:1px solid #FDE68A;">PRIMARY</span>
+        </div>
+        <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.6;padding-top:8px;">"How did you hear about us?" on every form and in every sales conversation. Captures the dark funnel: podcasts, peer conversations, events, word of mouth. Weighted heavily alongside closed-won.</div></div>
+      </div>
+      <div class="card hover" onclick="toggleExpand(this)" style="padding:16px 18px;border-top:3px solid var(--purple);cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="font-size:15px;font-weight:700;color:var(--navy);">Closed-Won Analysis</div>
+          <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--purple-light);color:var(--purple);border:1px solid #DDD6FE;">PRIMARY</span>
+        </div>
+        <div class="expand-body"><div style="font-size:14px;color:var(--body-dark);line-height:1.6;padding-top:8px;">Run on every closed deal. Combines tracked data with self-reported and sales intel. The ultimate truth of what actually drove revenue.</div></div>
       </div>
     </div>
 
@@ -1455,14 +1776,14 @@ function renderFunnel() {
 function renderTimeline() {
   document.getElementById('tabContent').innerHTML = `
     <!-- Timeline -->
-    <div class="card" style="padding:28px;margin-bottom:20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div style="font-size:18px;font-weight:800;color:var(--navy);">Execution Timeline</div>
+    <div class="card" style="padding:32px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <div style="font-size:20px;font-weight:800;color:var(--navy);">Execution Timeline</div>
         <div style="font-size:13px;color:#6366F1;font-weight:600;">Hover any bar for details</div>
       </div>
 
       <!-- Phase headers -->
-      <div style="display:grid;grid-template-columns:100px repeat(4, 1fr);gap:2px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:120px repeat(4, 1fr);gap:3px;margin-bottom:20px;">
         <div></div>
         ${[
           ['Day 1-30','Learn + Set Up','var(--blue)'],
@@ -1470,80 +1791,93 @@ function renderTimeline() {
           ['Day 61-90','Full Activation','var(--amber-dark)'],
           ['Day 91-120','Optimize + Scale','var(--navy)'],
         ].map(([phase,label,color]) => `
-          <div style="text-align:center;padding:8px 4px;border-radius:8px;background:${color};color:white;">
-            <div style="font-size:13px;font-weight:700;">${phase}</div>
-            <div style="font-size:11px;opacity:0.85;">${label}</div>
+          <div style="text-align:center;padding:12px 8px;border-radius:10px;background:${color};color:white;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+            <div style="font-size:14px;font-weight:800;">${phase}</div>
+            <div style="font-size:12px;opacity:0.9;margin-top:2px;">${label}</div>
           </div>
         `).join('')}
       </div>
 
-      <!-- Infrastructure Track -->
-      <div style="margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:var(--blue);"></div>
-          <div style="font-size:14px;font-weight:700;color:var(--navy);">Infrastructure</div>
+      <!-- Week grid background -->
+      <div style="position:relative;">
+        <div style="position:absolute;top:0;bottom:0;left:110px;right:0;display:grid;grid-template-columns:repeat(16, 1fr);gap:0;pointer-events:none;z-index:0;">
+          ${Array.from({length:16},(_,i)=>`<div style="border-left:1px solid ${i % 4 === 0 ? 'var(--border)' : '#F1F5F9'};height:100%;"></div>`).join('')}
         </div>
-        <div style="display:grid;grid-template-columns:100px repeat(16, 1fr);gap:2px;align-items:center;">
-          <div></div>
-          ${[
-            [1,3,'var(--blue)','Data + Scoring','Confirm data stack, build universe, score and tier all accounts'],
-            [3,5,'#3B82F6','Activation + Alignment','Tier 1 buying committee mapping, sales alignment, handoff process'],
-            [10,12,'#60A5FA','Metrics Review','Leading indicators, tier movement, pipeline check'],
-            [12,13,'#93C5FD','Recalibrate','Scoring model recalibrated with real data'],
-            [13,15,'#60A5FA','Funnel Review','Pipeline actuals vs model, attribution, budget reallocation'],
-            [15,17,'#93C5FD','Q2 Planning','Benchmark report, conferences, analyst briefings, partnerships'],
-          ].map(([s,e,color,text,tip]) => `
-            <div style="grid-column:${s+1}/${e+1};background:${color};color:white;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;" data-tip="${tip}" onmouseover="showTip(event,this)" onmouseout="hideTip()">${text}</div>
-          `).join('')}
-        </div>
-      </div>
 
-      <!-- Assets Track -->
-      <div style="margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:var(--green-dark);"></div>
-          <div style="font-size:14px;font-weight:700;color:var(--navy);">Assets</div>
+        <!-- Infrastructure Track -->
+        <div style="margin-bottom:20px;position:relative;z-index:1;">
+          <div style="display:grid;grid-template-columns:120px 1fr;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--blue);"></div>
+              <div style="font-size:15px;font-weight:700;color:var(--navy);">Infrastructure</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:120px repeat(16, 1fr);gap:3px;align-items:center;">
+            <div></div>
+            ${[
+              [1,3,'var(--blue)','Data + Scoring','Confirm data stack, build universe, score and tier all accounts'],
+              [3,5,'#3B82F6','Activation + Alignment','Tier 1 buying committee mapping, sales alignment, handoff process'],
+              [10,12,'#60A5FA','Metrics Review','Leading indicators, tier movement, pipeline check'],
+              [12,13,'#93C5FD','Recalibrate','Scoring model recalibrated with real data'],
+              [13,15,'#60A5FA','Funnel Review','Pipeline actuals vs model, attribution, budget reallocation'],
+              [15,17,'#93C5FD','Q2 Planning','Benchmark report, conferences, analyst briefings, partnerships'],
+            ].map(([s,e,color,text,tip]) => `
+              <div style="grid-column:${s+1}/${e+1};background:${color};color:white;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.1);transition:transform 0.15s;" data-tip="${tip}" onmouseover="showTip(event,this);this.style.transform='scale(1.03)'" onmouseout="hideTip();this.style.transform='scale(1)'">${text}</div>
+            `).join('')}
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:100px repeat(16, 1fr);gap:2px;align-items:center;">
-          <div></div>
-          ${[
-            [2,5,'#059669','Sales Enablement','Talk tracks, BDR templates, positioning deck, Google Ads setup'],
-            [5,7,'#10B981','Competitive + Pages','4 competitive guides, landing pages, campaign pages'],
-            [6,9,'#34D399','Videos + Assessment','Personalized videos, use case briefs, one-pager, assessment build'],
-            [11,13,'#6EE7B7','Content Flywheel','Repurpose webinar content into blog, social, email'],
-            [13,15,'#10B981','Calculator + Case Study','Cost calculator build, first case study if available'],
-            [15,17,'#6EE7B7','Sandbox Scoping','Scope with product team, may wait until post-GA'],
-          ].map(([s,e,color,text,tip]) => `
-            <div style="grid-column:${s+1}/${e+1};background:${color};color:white;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;" data-tip="${tip}" onmouseover="showTip(event,this)" onmouseout="hideTip()">${text}</div>
-          `).join('')}
-        </div>
-      </div>
 
-      <!-- Campaigns Track -->
-      <div style="margin-bottom:6px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <div style="width:8px;height:8px;border-radius:50%;background:var(--orange);"></div>
-          <div style="font-size:14px;font-weight:700;color:var(--navy);">Campaigns</div>
+        <!-- Assets Track -->
+        <div style="margin-bottom:20px;position:relative;z-index:1;">
+          <div style="display:grid;grid-template-columns:120px 1fr;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--green-dark);"></div>
+              <div style="font-size:15px;font-weight:700;color:var(--navy);">Assets</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:120px repeat(16, 1fr);gap:3px;align-items:center;">
+            <div></div>
+            ${[
+              [2,5,'#059669','Sales Enablement','Talk tracks, BDR templates, positioning deck, Google Ads setup'],
+              [5,7,'#10B981','Competitive + Pages','4 competitive guides, landing pages, campaign pages'],
+              [6,9,'#34D399','Videos + Assessment','Personalized videos, use case briefs, one-pager, assessment build'],
+              [11,13,'#6EE7B7','Content Flywheel','Repurpose webinar content into blog, social, email'],
+              [13,15,'#10B981','Calculator + Case Study','Cost calculator build, first case study if available'],
+              [15,17,'#6EE7B7','Sandbox Scoping','Scope with product team, may wait until post-GA'],
+            ].map(([s,e,color,text,tip]) => `
+              <div style="grid-column:${s+1}/${e+1};background:${color};color:white;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.1);transition:transform 0.15s;" data-tip="${tip}" onmouseover="showTip(event,this);this.style.transform='scale(1.03)'" onmouseout="hideTip();this.style.transform='scale(1)'">${text}</div>
+            `).join('')}
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:100px repeat(16, 1fr);gap:2px;align-items:center;">
-          <div></div>
-          ${[
-            [5,6,'#EA580C','P1 T1 Launch','CSM/AM expansion outreach (pre-assessment CTAs)'],
-            [5,7,'#F97316','Google Ads','Cross-tier paid search: high-intent + solution-aware keywords'],
-            [6,8,'#FB923C','Content + Webinars','Blog, LinkedIn organic, SEO, first webinar'],
-            [7,9,'#EA580C','Nurtures','P1 T2 emails, P2 T2/T3 nurtures, customer webinar series'],
-            [9,11,'#C2410C','P2 T1 ABM + Events','Full ABM, in-product, Influ2, advisory board, ABM-lite T2'],
-            [10,12,'#9A3412','Assessment Live','Becomes primary CTA, all campaigns updated'],
-          ].map(([s,e,color,text,tip]) => `
-            <div style="grid-column:${s+1}/${e+1};background:${color};color:white;padding:6px 8px;border-radius:6px;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;" data-tip="${tip}" onmouseover="showTip(event,this)" onmouseout="hideTip()">${text}</div>
-          `).join('')}
+
+        <!-- Campaigns Track -->
+        <div style="margin-bottom:8px;position:relative;z-index:1;">
+          <div style="display:grid;grid-template-columns:120px 1fr;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:var(--orange);"></div>
+              <div style="font-size:15px;font-weight:700;color:var(--navy);">Campaigns</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:120px repeat(16, 1fr);gap:3px;align-items:center;">
+            <div></div>
+            ${[
+              [5,6,'#EA580C','P1 T1 Launch','CSM/AM expansion outreach (pre-assessment CTAs)'],
+              [5,7,'#F97316','Google Ads','Cross-tier paid search: high-intent + solution-aware keywords'],
+              [6,8,'#FB923C','Content + Webinars','Blog, LinkedIn organic, SEO, first webinar'],
+              [7,9,'#EA580C','Nurtures','P1 T2 emails, P2 T2/T3 nurtures, customer webinar series'],
+              [9,11,'#C2410C','P2 T1 ABM + Events','Full ABM, in-product, Influ2, advisory board, ABM-lite T2'],
+              [10,12,'#9A3412','Assessment Live','Becomes primary CTA, all campaigns updated'],
+            ].map(([s,e,color,text,tip]) => `
+              <div style="grid-column:${s+1}/${e+1};background:${color};color:white;padding:8px 10px;border-radius:8px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.1);transition:transform 0.15s;" data-tip="${tip}" onmouseover="showTip(event,this);this.style.transform='scale(1.03)'" onmouseout="hideTip();this.style.transform='scale(1)'">${text}</div>
+            `).join('')}
+          </div>
         </div>
       </div>
 
       <!-- Week numbers -->
-      <div style="display:grid;grid-template-columns:100px repeat(16, 1fr);gap:2px;margin-top:8px;">
-        <div></div>
-        ${Array.from({length:16},(_,i)=>`<div style="text-align:center;font-size:10px;color:var(--muted);font-weight:600;">${i+1}</div>`).join('')}
+      <div style="display:grid;grid-template-columns:120px repeat(16, 1fr);gap:3px;margin-top:12px;padding-top:8px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--muted);font-weight:600;">Week</div>
+        ${Array.from({length:16},(_,i)=>`<div style="text-align:center;font-size:11px;color:var(--muted);font-weight:600;">${i+1}</div>`).join('')}
       </div>
     </div>
 
@@ -1593,90 +1927,228 @@ function renderTimeline() {
 
 // ═══ TAB 9: AI ═══
 function renderAI() {
+  window._ai = {
+    gtmSubs: [
+      {title:'Market Sizing',line2:'',name:'Market Sizing Subagent',desc:'Researches total addressable market size, serviceable market segments, and growth projections for the AI-powered learning category.',input:'Product description + Market Intelligence Brief scope.',output:'Market size estimates with methodology and source citations.'},
+      {title:'Geography',line2:'',name:'Geography Subagent',desc:'Analyzes geographic market patterns, regional adoption rates, and identifies priority markets based on enterprise density and AI maturity.',input:'Product description + target market parameters.',output:'Geographic prioritization with regional market characteristics.'},
+      {title:'Competitive',line2:'Landscape',name:'Competitive Landscape Subagent',desc:'Maps every relevant competitor: their products, positioning, pricing signals, recent moves, and gaps. Produces the competitive intelligence that feeds battlecards and positioning.',input:'Product description + category definition.',output:'Structured competitive profiles with positioning gaps and differentiation opportunities.'},
+      {title:'Market',line2:'Structure',name:'Market Structure Subagent',desc:'Analyzes how the market is organized: buyer behavior patterns, decision-making structures, budget ownership, and category maturity stage.',input:'Product description + ICP parameters.',output:'Market structure analysis with buyer journey mapping and budget patterns.'},
+    ],
+    gtmLead: {name:'Team Lead (Orchestrator)',desc:'Orchestrates all 5 agents sequentially. Routes approved output from each agent to all downstream agents. Ensures human review and approval between each stage before proceeding.',input:'Product name and description to start the pipeline.',output:'Coordinates the full pipeline end to end. Each agent receives all upstream approved outputs.',maps:'The orchestrator enforces the sequential discipline of the pipeline. No agent runs until the previous output is reviewed and approved. This is what makes the system reliable, not just fast.'},
+    aioLead: {name:'Team Lead (Orchestrator)',desc:'Orchestrates all 6 agents sequentially. Routes a CSV of target accounts through the full pipeline: research, scoring, tiering, hooks, outreach, and campaign intelligence.',input:'CSV file of target accounts + GTM Strategy Engine outputs as foundation.',output:'Coordinates the full pipeline from raw account list to personalized outreach and campaign inputs.',maps:'The orchestrator ensures each account flows through every stage. No outreach gets drafted without a scored and tiered account. No hooks get written without completed research. The sequence is the quality control.'},
+    gtm: [
+      {line1:'Market',line2:'Intelligence',name:'Agent 1: Market Intelligence',desc:'Conducts deep market research to map the competitive landscape, identify buyer behavior patterns, and surface macro trends shaping the category. Produces a structured Market Intelligence Brief that becomes the foundation for every ICP, channel, and messaging decision downstream.',input:'Company name and product description.',output:'Structured Market Intelligence Brief.'},
+      {line1:'ICP',line2:'Definition',name:'Agent 2: ICP Definition',desc:'Defines who to target and who to avoid. Builds the ideal customer profile across firmographic, technographic, and behavioral dimensions with explicit anti-ICP criteria.',input:'Approved Market Intelligence Brief from Agent 1.',output:'BDR-ready ICP definition with firmographic, technographic, and behavioral criteria.'},
+      {line1:'Channel',line2:'Strategy',name:'Agent 3: Channel Strategy',desc:'Determines the right GTM motion, prioritizes channels by effort and impact, and designs the partnership strategy. Factors in real team capacity and budget constraints.',input:'Approved outputs from Agents 1-2.',output:'GTM motion design, channel prioritization with effort and timeline, and partnership strategy.'},
+      {line1:'Messaging',line2:'Framework',name:'Agent 4: Messaging Framework',desc:'Builds the strategic messaging layer connecting product capabilities to buyer pain points and competitive gaps. Produces positioning angles and guardrails, not finished copy.',input:'Approved outputs from Agents 1-3.',output:'Positioning angles, competitive differentiation lines, and messaging guardrails.'},
+      {line1:'90-Day',line2:'Plan',name:'Agent 5: 90-Day Plan',desc:'Converts all upstream strategy into a phased execution plan with specific owners and deadlines. Every item must pass the Monday Morning Test: could someone act on this first thing Monday?',input:'All approved outputs from Agents 1-4.',output:'Phased execution plan with specific action items, owners, and deadlines.'},
+    ],
+    aio: [
+      {line1:'Account',line2:'Research',name:'Agent 1: Account Research Analyst',desc:'The starting point for every account in the pipeline. Investigates one company at a time against all 7 buying signals, gathering evidence to determine whether each signal is active or inactive. Produces the verified signal profile that the scoring agent uses to generate a 0-to-100 score.',input:'Company name from uploaded CSV + 7 signal definitions.',output:'Structured signal profile with active/inactive evidence for each signal.'},
+      {line1:'ICP',line2:'Scoring',name:'Agent 2: ICP Scoring Analyst',desc:'Scores each account on a 0-to-100 scale using the weighted signal model. A judge, not a researcher. Every score is backed by cited evidence from the research agent.',input:'Signal profile from Agent 1 + signal weights.',output:'0-to-100 score with weighted signal breakdown and evidence citations.'},
+      {line1:'Account',line2:'Prioritization',name:'Agent 3: Account Prioritization Analyst',desc:'Sees all scored accounts at once and ranks them into 3 tiers based on program-specific cut-offs. Writes a rationale for every placement and flags borderline accounts for human review.',input:'All scored accounts from Agent 2 + tier cut-off definitions.',output:'3-tier ranked list with rationale for each placement.'},
+      {line1:'Creative',line2:'Research',name:'Agent 4: Creative Research Analyst',desc:'Finds the intersection between what is happening at a company and what AgentHub solves. Produces account-specific hooks that pass 3 tests: product connection, specificity, and recency.',input:'Tiered account list + company research from Agent 1.',output:'Minimum 2 account-specific hooks per Tier 1 account.'},
+      {line1:'Outreach',line2:'Copywriter',name:'Agent 5: Outreach Copywriter',desc:'Writes personalized outreach for one persona at a time using the Hook-Bridge-Product-CTA structure. Respects messaging guardrails. A marketer reviews and approves instead of writing from scratch.',input:'Hooks from Agent 4 + messaging framework + persona definitions.',output:'Personalized outreach per persona using Hook-Bridge-Product-CTA structure.'},
+      {line1:'Campaign',line2:'Intelligence',name:'Agent 6: Campaign Intelligence Analyst',desc:'Produces paid media inputs at segment level. Generates keyword lists by intent stage, ad copy by persona and funnel stage, and audience targeting segments. Thinks one-to-many, not one-to-one.',input:'ICP definition + messaging framework + channel strategy.',output:'Keywords by intent stage, ad copy by persona and funnel stage, and audience segments.'},
+    ]
+  };
+
+  function agentPos(count, cx, cy, r) {
+    return [...Array(count)].map((_,i) => {
+      const a = (-90 + 360/count*i) * Math.PI/180;
+      return [Math.round(cx + r*Math.cos(a)), Math.round(cy + r*Math.sin(a))];
+    });
+  }
+
+  function buildTeam(id, title, subtitle, col, outputText) {
+    const agents = window._ai[id];
+    const hasSubs = id === 'gtm' && window._ai.gtmSubs;
+    const cx=400, cy=240, r=200;
+    const p = agentPos(agents.length, cx, cy, r);
+    const subs = hasSubs ? window._ai.gtmSubs : [];
+    const topX = p[0][0], topY = p[0][1];
+    const subPos = subs.map((_, i) => [Math.round(topX - 160 + (320/(subs.length-1))*i), topY - 120]);
+    const vbTop = hasSubs ? -165 : -55;
+    const vbH = hasSubs ? 725 : 615;
+    const titleBg = id === 'gtm' ? 'var(--blue-light)' : 'var(--orange-light)';
+    const titleBorder = id === 'gtm' ? 'var(--blue)' : '#C2410C';
+    return `
+      <div style="margin-bottom:48px;">
+        <div class="card" style="padding:20px 24px;margin-bottom:16px;border-left:4px solid ${titleBorder};background:${titleBg};">
+          <div style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:4px;">${title}</div>
+          <div style="font-size:15px;color:var(--body-dark);line-height:1.6;">${subtitle}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:260px 1fr 260px;gap:10px;align-items:start;">
+          <div id="${id}PopL" style="min-height:100px;"></div>
+          <div style="position:relative;">
+            <svg viewBox="0 ${vbTop} 800 ${vbH}" width="100%" style="display:block;font-family:Plus Jakarta Sans,sans-serif;">
+              ${p.map(([x,y],i) => `<line id="${id}L${i}" x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${col}" stroke-width="2.5" opacity="0.12" style="transition:all 0.3s;"/>`).join('')}
+              ${hasSubs ? subPos.map(([sx,sy],i) => `
+                <line id="${id}L${100+i}" x1="${topX}" y1="${topY}" x2="${sx}" y2="${sy}" stroke="${col}" stroke-width="1.5" opacity="0.25" stroke-dasharray="4,3" style="transition:all 0.3s;"/>
+                <g onclick="aiClick('${id}',${100+i})" style="cursor:pointer;">
+                <circle id="${id}N${100+i}" cx="${sx}" cy="${sy}" r="22" fill="${col}" opacity="0.8" style="transition:all 0.25s;"/>
+                <circle cx="${sx}" cy="${sy-4}" r="5.5" fill="white" opacity="0.9"/>
+                <ellipse cx="${sx}" cy="${sy+5}" rx="7.5" ry="5" fill="white" opacity="0.9"/>
+                <text x="${sx}" y="${subs[i].line2 ? sy-54 : sy-42}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0F172A">${subs[i].title}</text>
+                ${subs[i].line2 ? `<text x="${sx}" y="${sy-41}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0F172A">${subs[i].line2}</text>` : ''}
+                <text x="${sx}" y="${sy-29}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#64748B">Subagent</text>
+                </g>
+              `).join('') : ''}
+              <g onclick="aiClick('${id}',-1)" style="cursor:pointer;">
+                <circle cx="${cx}" cy="${cy}" r="42" fill="var(--navy)" id="${id}Nlead" style="transition:all 0.25s;"/>
+                <circle cx="${cx}" cy="${cy-8}" r="10" fill="white" opacity="0.9"/>
+                <ellipse cx="${cx}" cy="${cy+9}" rx="14" ry="9" fill="white" opacity="0.9"/>
+                <text x="${cx}" y="${cy+64}" text-anchor="middle" font-size="15" font-weight="700" fill="#0F172A">Team Lead</text>
+              </g>
+              ${p.map(([x,y],i) => {
+                const isTop = y < cy - 150;
+                return `
+                <g onclick="aiClick('${id}',${i})" style="cursor:pointer;">
+                  <circle id="${id}N${i}" cx="${x}" cy="${y}" r="36" fill="${col}" style="transition:all 0.25s;"/>
+                  <circle cx="${x}" cy="${y-7}" r="9" fill="white" opacity="0.9"/>
+                  <ellipse cx="${x}" cy="${y+8}" rx="12" ry="7.5" fill="white" opacity="0.9"/>
+                  ${isTop ? `
+                    <text x="${x+50}" y="${y-8}" text-anchor="start" font-size="14" font-weight="700" fill="#0F172A">${agents[i].line1}</text>
+                    <text x="${x+50}" y="${y+8}" text-anchor="start" font-size="14" font-weight="700" fill="#0F172A">${agents[i].line2}</text>
+                    <text x="${x+50}" y="${y+23}" text-anchor="start" font-size="12.5" font-weight="600" fill="#64748B">Agent</text>
+                  ` : `
+                    <text x="${x}" y="${y+54}" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">${agents[i].line1}</text>
+                    <text x="${x}" y="${y+70}" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">${agents[i].line2}</text>
+                    <text x="${x}" y="${y+86}" text-anchor="middle" font-size="12.5" font-weight="600" fill="#64748B">Agent</text>
+                  `}
+                </g>
+              `}).join('')}
+            </svg>
+            <div style="font-size:14px;color:#6366F1;font-weight:600;text-align:center;margin-top:6px;">Click any agent to see their role, input, and output</div>
+          </div>
+          <div id="${id}PopR" style="min-height:100px;"></div>
+        </div>
+        <div class="card" style="padding:16px 20px;margin-top:16px;border-left:4px solid ${col};">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${col};margin-bottom:4px;">Team Output</div>
+          <div style="font-size:15px;color:var(--body-dark);line-height:1.5;">${outputText}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  window._aiActive = {id:null, i:null};
+
+  window.aiClick = function(id, i) {
+    // Reset previous
+    if(window._aiActive.id) {
+      const prev = window._aiActive;
+      if(prev.i === -1) {
+        document.getElementById(prev.id+'Nlead').setAttribute('r','42');
+      } else if(prev.i >= 100) {
+        document.getElementById(prev.id+'N'+prev.i).setAttribute('r','22');
+        document.getElementById(prev.id+'L'+prev.i).setAttribute('opacity','0.25');
+        document.getElementById(prev.id+'L'+prev.i).setAttribute('stroke-width','1.5');
+      } else {
+        document.getElementById(prev.id+'L'+prev.i).setAttribute('opacity','0.12');
+        document.getElementById(prev.id+'L'+prev.i).setAttribute('stroke-width','2.5');
+        document.getElementById(prev.id+'N'+prev.i).setAttribute('r','36');
+      }
+      document.getElementById(prev.id+'PopL').innerHTML = '';
+      document.getElementById(prev.id+'PopR').innerHTML = '';
+      if(prev.id !== id) {
+        document.getElementById(prev.id+'PopL').innerHTML = '';
+        document.getElementById(prev.id+'PopR').innerHTML = '';
+      }
+    }
+    // Toggle off if same
+    if(window._aiActive.id === id && window._aiActive.i === i) {
+      document.getElementById(id+'PopL').innerHTML = '';
+      document.getElementById(id+'PopR').innerHTML = '';
+      window._aiActive = {id:null, i:null};
+      return;
+    }
+    // Highlight
+    if(i === -1) {
+      document.getElementById(id+'Nlead').setAttribute('r','48');
+    } else if(i >= 100) {
+      document.getElementById(id+'N'+i).setAttribute('r','27');
+      document.getElementById(id+'L'+i).setAttribute('opacity','0.9');
+      document.getElementById(id+'L'+i).setAttribute('stroke-width','3');
+    } else {
+      document.getElementById(id+'L'+i).setAttribute('opacity','0.9');
+      document.getElementById(id+'L'+i).setAttribute('stroke-width','4.5');
+      document.getElementById(id+'N'+i).setAttribute('r','42');
+    }
+    // Determine side
+    let isRight = true;
+    if(i >= 100) {
+      const si = i - 100;
+      const subs = window._ai.gtmSubs;
+      const topX = 400;
+      const sx = Math.round(topX - 160 + (320/(subs.length-1))*si);
+      isRight = sx >= 400;
+    } else if(i >= 0) {
+      const count = window._ai[id].length;
+      const angle = (-90 + 360/count*i) * Math.PI/180;
+      isRight = (400 + 200*Math.cos(angle)) >= 400;
+    }
+    // Build card
+    let a;
+    if(i === -1) a = window._ai[id+'Lead'];
+    else if(i >= 100) a = window._ai.gtmSubs[i-100];
+    else a = window._ai[id][i];
+    const col = id==='gtm' ? '#2563EB' : '#C2410C';
+    const borderCol = i === -1 ? '#0F172A' : col;
+    const cardHTML = `
+      <div class="card" style="padding:18px 20px;border-left:4px solid ${borderCol};box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px;">${a.name}</div>
+          <div onclick="aiClose('${id}')" style="cursor:pointer;font-size:16px;color:var(--muted);padding:0 4px;line-height:1;">✕</div>
+        </div>
+        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;margin-bottom:12px;">${a.desc}</div>
+        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;margin-bottom:4px;"><strong>Input:</strong> ${a.input}</div>
+        <div style="font-size:14px;color:var(--body-dark);line-height:1.6;"><strong>Output:</strong> ${a.output}</div>
+      </div>
+    `;
+    document.getElementById(id+'PopL').innerHTML = '';
+    document.getElementById(id+'PopR').innerHTML = '';
+    if(isRight) {
+      document.getElementById(id+'PopR').innerHTML = cardHTML;
+    } else {
+      document.getElementById(id+'PopL').innerHTML = cardHTML;
+    }
+    window._aiActive = {id, i};
+  };
+
+  window.aiClose = function(id) {
+    if(window._aiActive.id === id) {
+      const ai = window._aiActive.i;
+      if(ai === -1) {
+        document.getElementById(id+'Nlead').setAttribute('r','42');
+      } else if(ai >= 100) {
+        document.getElementById(id+'N'+ai).setAttribute('r','22');
+        document.getElementById(id+'L'+ai).setAttribute('opacity','0.25');
+        document.getElementById(id+'L'+ai).setAttribute('stroke-width','1.5');
+      } else {
+        document.getElementById(id+'L'+ai).setAttribute('opacity','0.12');
+        document.getElementById(id+'L'+ai).setAttribute('stroke-width','2.5');
+        document.getElementById(id+'N'+ai).setAttribute('r','36');
+      }
+    }
+    document.getElementById(id+'PopL').innerHTML = '';
+    document.getElementById(id+'PopR').innerHTML = '';
+    window._aiActive = {id:null, i:null};
+  };
+
   document.getElementById('tabContent').innerHTML = `
-    <!-- The Scale Problem -->
-    <div class="card" style="padding:24px;margin-bottom:20px;border-left:4px solid var(--navy);">
-      <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px;">The Scale Problem This Plan Creates</div>
-      <div style="font-size:15px;color:var(--body-dark);line-height:1.65;">This plan requires continuous competitive monitoring, 150-300 personalized touchpoints per quarter across multiple personas, and a content engine producing category education weekly. The timelines are aggressive because two AI systems handle the research, scoring, and drafting. Humans handle strategy, relationships, and decisions.</div>
+    <!-- AI-Powered Scale -->
+    <div class="card" style="padding:24px;margin-bottom:32px;border:1px solid #C7D2FE;background:linear-gradient(135deg,#EFF6FF,#E0E7FF 50%,#EDE9FE);">
+      <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px;">How AI Makes This Plan Executable at Scale</div>
+      <div style="font-size:15px;color:var(--body-dark);line-height:1.65;">This plan requires continuous competitive monitoring, 150-300 personalized touchpoints per quarter across multiple personas, and a content engine producing category education weekly. Two AI systems handle the research, scoring, and drafting. Humans handle strategy, relationships, and decisions.</div>
     </div>
 
-    <!-- Two Systems -->
-    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Two AI Systems, Already Built and Tested</div>
-    <div style="font-size:14px;color:var(--body-dark);margin-bottom:14px;">Both systems are working demos built in Claude Code. They are not concepts. They have been tested, including a full run on Docebo AgentHub that produced findings used in this plan.</div>
+    <div style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:4px;">Two AI Systems, Already Built and Tested</div>
+    <div style="font-size:15px;color:var(--body-dark);margin-bottom:32px;">Both systems are working demos built in Claude Code. They have been tested on Docebo AgentHub.</div>
 
-    <div class="grid-2" style="margin-bottom:20px;">
-      <!-- System 1: GTM Strategy Engine -->
-      <div class="card" style="padding:24px;border-left:4px solid var(--blue);">
-        <div style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:6px;">GTM Strategy Engine</div>
-        <div style="font-size:14px;color:var(--body-dark);margin-bottom:4px;">Five-agent sequential pipeline. Each agent receives approved output from the one before it. Human review between each stage. Produces a complete GTM strategy from a product brief.</div>
-        <div style="font-size:13px;color:#6366F1;font-weight:600;margin-bottom:10px;">Click any agent to see how it maps to this plan</div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          ${[
-            ['Agent 1: Market Intelligence','Researches market sizing, competitive landscape, buying patterns, and macro trends via web search. Outputs a structured Market Intelligence Brief.','Fed the Competitive Landscape and Challenge tabs. Caught Microsoft Learning Agent going GA June 2026 as a real-time signal. In production: runs periodically to keep competitive intelligence current.'],
-            ['Agent 2: ICP Definition','Takes the MI Brief and defines the target customer across 6 dimensions with anti-ICP criteria. Validates with targeted web search. Output is BDR-ready.','Informed the ICP + Buying Committee tab. The 6-dimension framework directly maps to the ICP structure in this plan. Validated firmographic, technographic, and behavioral criteria against market data.'],
-            ['Agent 3: Channel Strategy','Reasoning-heavy. Produces GTM motion design, channel prioritization with effort and timeline, and partnership strategy. Factors in team and budget constraints.','Informed the Programs + Channels tab. GTM motion recommendation, channel prioritization, and the tier-based investment model were shaped by this output.'],
-            ['Agent 4: Messaging Framework','Produces positioning angles connecting product capability to ICP pain to competitive gap, plus differentiation guardrails. Strategic direction, not finished copy.','Built the three-layer messaging framework. The positioning angles and competitive differentiation in the Messaging tab trace directly to this output.'],
-            ['Agent 5: 90-Day Plan','Converts all upstream strategy into phased execution with specific action items, owners, and deadlines. Every item must pass the Monday Morning Test.','Generated the initial 120-day timeline structure. The phased approach, workstream sequencing, and milestone definitions were shaped by this output.'],
-          ].map(([name,desc,mapping]) => `
-            <div class="card hover" onclick="toggleExpand(this)" style="padding:10px 14px;cursor:pointer;background:var(--blue-light);border:1px solid var(--blue-pale);box-shadow:none;">
-              <div style="font-size:14px;font-weight:600;color:var(--navy);">${name}</div>
-              <div style="font-size:13px;color:var(--body-dark);margin-top:2px;">${desc}</div>
-              <div class="expand-body"><div style="font-size:13px;color:var(--body-dark);line-height:1.6;padding-top:6px;border-top:1px solid var(--border);margin-top:6px;">
-                <strong>How it maps to this plan:</strong> ${mapping}
-              </div></div>
-            </div>
-          `).join('')}
-        </div>
-        <div style="margin-top:12px;padding:10px 14px;border-radius:10px;background:#F8FAFC;border:1px solid var(--border);font-size:13px;color:var(--body-dark);">
-          <strong>Already tested on AgentHub:</strong> 19/19 quality checks passed. Findings directly informed this plan.
-        </div>
-      </div>
+    ${buildTeam('gtm', 'GTM Strategy Engine', 'Five-agent sequential pipeline that produces a complete go-to-market strategy from a single product brief. Each agent receives approved output from all upstream agents with human review between each stage. Covers market intelligence, ICP definition, channel strategy, messaging framework, and phased execution planning.', '#2563EB', 'Complete GTM strategy from a single product brief: market intelligence, ICP definition, channel strategy, messaging framework, and phased execution plan.')}
 
-      <!-- System 2: Account Intelligence & Outreach -->
-      <div class="card" style="padding:24px;border-left:4px solid var(--orange);">
-        <div style="font-size:17px;font-weight:800;color:var(--navy);margin-bottom:6px;">Account Intelligence & Outreach System</div>
-        <div style="font-size:14px;color:var(--body-dark);margin-bottom:4px;">Six-agent sequential pipeline. Takes the GTM Strategy Engine output as its foundation, then researches, scores, tiers, and creates outreach for specific accounts.</div>
-        <div style="font-size:13px;color:#6366F1;font-weight:600;margin-bottom:10px;">Click any agent to see how it maps to this plan</div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          ${[
-            ['Agent 1: Account Research Analyst','Researches one company against all 6 ICP dimensions. Outputs structured evidence of match or mismatch for scoring. Focused, not broad.','Maps to the Account Intelligence tab. Currently uses web search. In production: connects to ZoomInfo, UserGems, and LinkedIn Sales Navigator for complete signal profiles across the 7 signals defined in this plan.'],
-            ['Agent 2: ICP Scoring Analyst','Scores the company across 6 dimensions on a 1-5 scale. A judge, not a researcher. Every score cites evidence. Anti-ICP scoring goes negative.','Executes the scoring logic from the Scoring + Tiering tab. In production: applies the 100-point model with the 7 weighted signals. The scoring logic is the same, the point system adapts.'],
-            ['Agent 3: Account Prioritization Analyst','Sees all scored accounts at once. Ranks into 3 tiers using relative comparison. Writes a rationale for every placement and flags borderline accounts.','Produces the tiered account lists from the Scoring tab. Tier 1 for full ABM, Tier 2 for nurture, Deprioritize for no fit. The rationale for each account is what makes this actionable for BDRs.'],
-            ['Agent 4: Creative Research Analyst','Finds the intersection between what is happening at a company and what we sell. Every hook must pass 3 tests: product connection, specificity, and recency.','This is what makes the 5-step decision logic in the Messaging tab executable. The agent finds the account-specific hooks that become the "why now" in personalized outreach. Minimum 2 hooks per account.'],
-            ['Agent 5: Outreach Copywriter','Writes outreach for one persona at a time using Hook-Bridge-Product-CTA structure. Respects messaging guardrails from the framework.','Produces the 150-300 personalized touchpoints this plan requires. Each touchpoint follows the decision logic: account signal as hook, bridge to persona pain, product positioning, CTA. One marketer reviews instead of writing from scratch.'],
-            ['Agent 6: Campaign Intelligence Analyst','Produces paid media inputs at segment level: keywords by intent stage, ad copy by persona and funnel stage. Thinks one-to-many, not one-to-one.','Powers the paid media campaigns in Programs + Channels. Produces the keyword lists, ad copy variants, and audience segments that a campaign manager needs to build LinkedIn, Google Ads, and Influ2 campaigns.'],
-          ].map(([name,desc,mapping]) => `
-            <div class="card hover" onclick="toggleExpand(this)" style="padding:10px 14px;cursor:pointer;background:var(--orange-light);border:1px solid #FED7AA;box-shadow:none;">
-              <div style="font-size:14px;font-weight:600;color:var(--navy);">${name}</div>
-              <div style="font-size:13px;color:var(--body-dark);margin-top:2px;">${desc}</div>
-              <div class="expand-body"><div style="font-size:13px;color:var(--body-dark);line-height:1.6;padding-top:6px;border-top:1px solid var(--border);margin-top:6px;">
-                <strong>How it maps to this plan:</strong> ${mapping}
-              </div></div>
-            </div>
-          `).join('')}
-        </div>
-        <div style="margin-top:12px;padding:10px 14px;border-radius:10px;background:#F8FAFC;border:1px solid var(--border);font-size:13px;color:var(--body-dark);">
-          <strong>Enhancement needed:</strong> Connect to ZoomInfo, UserGems, Bombora, and Salesforce APIs. The agent logic and pipeline architecture stay the same. The data source changes from web search to production tools.
-        </div>
-      </div>
-    </div>
+    ${buildTeam('aio', 'Account Intelligence & Outreach System', 'Six-agent sequential pipeline. Takes a CSV of target accounts as input. The first three agents investigate each company against all 7 buying signals, score them on a 0-to-100 scale, and rank them into 3 tiers. The last three agents find account-specific hooks, write persona-specific outreach using Hook-Bridge-Product-CTA, and generate paid media campaign inputs.', '#C2410C', 'From a CSV of target accounts to scored, tiered account lists with personalized outreach per persona and paid media campaign inputs. One marketer reviews what AI drafts instead of a team building from scratch.')}
 
-    <!-- From Demo to Production -->
-    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">From Demo to Production</div>
-    <div style="font-size:14px;color:var(--body-dark);margin-bottom:12px;">The agent logic and pipeline architecture are built. What changes is the data source: from web search to the actual tools in the data stack.</div>
-    <div class="grid-3" style="margin-bottom:20px;">
-      ${[
-        ['Demo (Today)','Web search for account data, publicly available information, manual CSV input','Working system that proves the logic','var(--muted)'],
-        ['Production (Week 4-6)','ZoomInfo, UserGems, Bombora/6sense, Salesforce, Gainsight APIs','Complete signal profiles, automated scoring, real-time updates','var(--blue)'],
-        ['Scale (Month 3+)','Full pipeline: automated intelligence, scoring, outreach drafting, campaign inputs','One marketer reviews what AI drafts instead of a team of 3-4 building from scratch','var(--green-dark)'],
-      ].map(([phase,data,outcome,color]) => `
-        <div class="card" style="padding:16px 18px;border-top:3px solid ${color};">
-          <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px;">${phase}</div>
-          <div style="font-size:13px;color:var(--body-dark);line-height:1.5;margin-bottom:6px;">${data}</div>
-          <div style="font-size:13px;font-weight:600;color:${color};">${outcome}</div>
-        </div>
-      `).join('')}
-    </div>
 
     <!-- What Stays Human -->
     <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:12px;">What AI Handles vs What Stays Human</div>
@@ -1684,7 +2156,7 @@ function renderAI() {
       <div class="card" style="padding:18px 20px;border-left:4px solid var(--blue);">
         <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:8px;">AI Handles</div>
         <div style="font-size:14px;color:var(--body-dark);line-height:1.7;">
-          <strong>Research:</strong> Account intelligence across 6 ICP dimensions, competitive monitoring, market signals<br>
+          <strong>Research:</strong> Account intelligence across 7 signals, competitive monitoring, market signals<br>
           <strong>Scoring:</strong> Automated scoring across 7 weighted signals, tier assignment with rationale<br>
           <strong>Drafting:</strong> Outreach sequences using Hook-Bridge-Product-CTA, ad copy, keyword lists<br>
           <strong>Pattern detection:</strong> Cross-account patterns, signal changes, tier movement triggers
@@ -1701,7 +2173,7 @@ function renderAI() {
       </div>
     </div>
 
-    ${takeaway('<strong>Takeaway:</strong> The timelines in this plan are aggressive because the AI execution layer is not theoretical. Both systems are built, tested, and ready to connect to the data stack. The plan was designed to be AI-executed from the start.')}
+    ${takeaway('<strong>Takeaway:</strong> The AI execution layer is not theoretical. Both systems are built, tested, and ready to connect to the data stack. The plan was designed to be AI-executed from the start.')}
   `;
 }
 
@@ -1719,7 +2191,7 @@ function hideTip() { document.getElementById('tooltip').classList.remove('show')
 
 // ═══ KEYBOARD ═══
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (activeTab < 9) switchTab(activeTab + 1); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (activeTab < TABS.length - 1) switchTab(activeTab + 1); }
   if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if (activeTab > 0) switchTab(activeTab - 1); }
 });
 

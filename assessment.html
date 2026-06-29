@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workforce Readiness Assessment | Docebo AgentHub</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0F172A; --blue: #2563EB; --blue-light: #EFF6FF; --blue-pale: #BFDBFE;
+    --green: #10B981; --green-dark: #059669; --green-light: #ECFDF5;
+    --orange: #F97316; --orange-light: #FFF7ED;
+    --amber: #F59E0B; --amber-dark: #D97706; --amber-light: #FFFBEB;
+    --red: #EF4444; --red-light: #FEF2F2;
+    --purple: #8B5CF6; --purple-light: #F5F3FF;
+    --body-dark: #1E293B; --body: #334155; --muted: #64748B;
+    --border: #E2E8F0; --bg: #F8FAFC;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--body-dark); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .container { max-width: 680px; width: 100%; padding: 20px; }
+  .card { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04); }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 4px; margin-bottom: 32px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--green-dark)); border-radius: 4px; transition: width 0.4s ease; }
+  .step-count { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; }
+  .question { font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 6px; line-height: 1.3; }
+  .question-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option { padding: 14px 18px; border: 2px solid var(--border); border-radius: 12px; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--body-dark); transition: all 0.15s; display: flex; align-items: center; gap: 12px; }
+  .option:hover { border-color: var(--blue); background: var(--blue-light); }
+  .option.selected { border-color: var(--blue); background: var(--blue-light); font-weight: 600; }
+  .option-marker { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .option.selected .option-marker { border-color: var(--blue); background: var(--blue); }
+  .option.selected .option-marker::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: white; }
+  .btn { padding: 12px 28px; border-radius: 10px; border: none; font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: #1D4ED8; }
+  .btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--muted); }
+  .btn-secondary:hover { color: var(--body-dark); }
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; }
+  .results-hidden { display: none; }
+  .score-ring { width: 160px; height: 160px; position: relative; margin: 0 auto 24px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .score-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+  .score-number { font-size: 42px; font-weight: 800; color: var(--navy); }
+  .score-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .maturity-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; margin-bottom: 20px; }
+  .gap-item { padding: 14px 18px; border-radius: 10px; margin-bottom: 8px; font-size: 14px; line-height: 1.5; }
+  .cta-box { padding: 20px 24px; border-radius: 12px; background: var(--blue); color: white; text-align: center; margin-top: 24px; }
+  .cta-box a { color: white; font-weight: 700; text-decoration: underline; }
+  .top-bar { height: 3px; position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(90deg, #2563EB, #059669, #F97316); }
+  .logo { text-align: center; margin-bottom: 24px; font-size: 16px; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+</style>
+</head>
+<body>
+<div class="top-bar"></div>
+<div class="container">
+  <div class="logo" style="cursor:pointer;" onclick="current=-1;document.getElementById('assessmentCard').style.display='block';document.getElementById('resultsCard').className='results-hidden';render();">
+      <img src="https://www.docebo.com/wp-content/uploads/2024/07/Docebo-Logo.svg" alt="Docebo" style="height:22px;vertical-align:middle;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline';">
+      <span style="display:none;font-size:16px;font-weight:800;color:#0F172A;letter-spacing:-0.5px;">docebo</span>
+      <span style="font-size:16px;font-weight:600;color:#64748B;margin-left:4px;">| AgentHub</span>
+    </div>
+  <div class="card" id="assessmentCard">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:10%"></div></div>
+    <div id="questionArea"></div>
+    <div class="nav">
+      <button class="btn btn-secondary" id="backBtn" onclick="navigate(-1)">Back</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="navigate(1)" disabled>Next</button>
+    </div>
+  </div>
+  <div class="results-hidden" id="resultsCard">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:13px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Your Results</div>
+      <div style="font-size:24px;font-weight:800;color:var(--navy);margin-bottom:24px;">AI Workforce Readiness Score</div>
+      <div class="score-ring">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="70" fill="none" stroke="#E2E8F0" stroke-width="10"/>
+          <circle cx="80" cy="80" r="70" fill="none" stroke="url(#scoreGrad)" stroke-width="10" stroke-linecap="round" stroke-dasharray="440" id="scoreArc"/>
+          <defs><linearGradient id="scoreGrad"><stop offset="0%" stop-color="#2563EB"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs>
+        </svg>
+        <div class="score-text">
+          <div class="score-number" id="scoreValue">0</div>
+          <div class="score-label">out of 50</div>
+        </div>
+      </div>
+      <div id="maturityBadge"></div>
+      <div style="font-size:15px;color:var(--body-dark);margin-bottom:24px;line-height:1.6;" id="maturityDesc"></div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:4px;">Personalized Gap Report</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:16px;">Based on your responses, here are the areas with the most opportunity.</div>
+      <div id="gapReport"></div>
+      <div class="cta-box">
+        <div style="font-size:18px;font-weight:700;margin-bottom:6px;">Ready to close the loop?</div>
+        <div style="font-size:14px;opacity:0.9;margin-bottom:12px;">See how AgentHub connects your knowledge sources to structured learning and measurable skills.</div>
+        <div style="font-size:15px;font-weight:700;">Request a Demo &rarr;</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--muted);">This assessment is a demo prototype built for the Docebo AgentHub demand gen plan.</div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "How many knowledge sources does your organization use?",
+    sub: "Knowledge sources include wikis, intranets, file storage, messaging, and documentation tools.",
+    options: ["1 (single platform like SharePoint)", "2-3 (e.g., SharePoint + Confluence)", "4-6 (fragmented across multiple tools)", "7+ (highly distributed)"],
+    scores: [1,3,4,5],
+    dimension: "Knowledge Fragmentation"
+  },
+  {
+    q: "How is learning content created in your organization today?",
+    sub: "Think about who builds training materials and how long it takes.",
+    options: ["L&D team builds everything manually from scratch", "Mix of manual creation and purchased off-the-shelf content", "Some automation but mostly manual curation", "AI-assisted content creation already in use"],
+    scores: [5,3,2,1],
+    dimension: "Content Creation Maturity"
+  },
+  {
+    q: "How does your organization track whether employees actually gained skills from training?",
+    sub: "The difference between course completion and proven capability.",
+    options: ["We do not track beyond course completion", "Self-reported skill assessments", "Manager evaluations tied to learning programs", "Automated skills measurement connected to learning outcomes"],
+    scores: [5,4,2,1],
+    dimension: "Skills Measurement"
+  },
+  {
+    q: "What LMS or learning platform are you currently using?",
+    sub: "Select the closest match.",
+    options: ["Cornerstone / SuccessFactors Learning / legacy LMS", "Docebo", "Workday Learning / Sana", "No formal LMS or built in-house"],
+    scores: [4,2,3,5],
+    dimension: "Platform Maturity"
+  },
+  {
+    q: "Has your organization deployed any AI productivity tools?",
+    sub: "Tools like Microsoft Copilot, Glean, ChatGPT Enterprise, or similar.",
+    options: ["No AI tools deployed", "Evaluating but not deployed", "Deployed to select teams", "Deployed organization-wide"],
+    scores: [1,2,4,5],
+    dimension: "AI Readiness"
+  },
+  {
+    q: "Is there an executive mandate for AI-driven workforce transformation?",
+    sub: "Board-level or C-suite commitment to AI adoption in people functions.",
+    options: ["No mandate or discussion", "Early conversations but no formal commitment", "Formal initiative with budget allocated", "Active program with executive sponsor (CAIO, CHRO, or equivalent)"],
+    scores: [1,2,4,5],
+    dimension: "Executive Sponsorship"
+  },
+  {
+    q: "How many employees does your organization have?",
+    sub: "Global headcount.",
+    options: ["Under 500", "500 - 1,000", "1,000 - 5,000", "5,000+"],
+    scores: [1,2,4,5],
+    dimension: "Scale"
+  },
+  {
+    q: "What is your biggest L&D challenge right now?",
+    sub: "Select the one that resonates most.",
+    options: ["Content takes too long to create and goes stale quickly", "Cannot measure whether training drives actual skill development", "Knowledge is trapped in tools that are disconnected from learning", "Leadership wants AI-powered L&D but we do not know where to start"],
+    scores: [4,5,5,4],
+    dimension: "Primary Pain Point"
+  },
+  {
+    q: "How soon are you looking to make a change to your learning technology stack?",
+    sub: "Your timeline for evaluating or switching platforms.",
+    options: ["Not actively looking", "Exploring over the next 6-12 months", "Actively evaluating solutions now", "Contract renewal coming up in the next 3-6 months"],
+    scores: [1,3,5,5],
+    dimension: "Buying Timeline"
+  },
+  {
+    q: "Do you need to train external audiences (customers, partners, or contractors)?",
+    sub: "Extended enterprise learning beyond employees.",
+    options: ["No, employees only", "Considering it for the future", "Yes, small-scale partner or customer training", "Yes, significant external training program"],
+    scores: [1,2,4,5],
+    dimension: "Extended Enterprise"
+  }
+];
+
+let current = -1; // -1 = lead capture screen
+let leadInfo = {};
+let answers = new Array(questions.length).fill(-1);
+
+function render() {
+  if (current === -1) {
+    // Lead capture screen
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('backBtn').style.visibility = 'hidden';
+    document.getElementById('nextBtn').textContent = 'Start Assessment';
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('questionArea').innerHTML = `
+      <div style="text-align:center;margin-bottom:24px;">
+        <div style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:6px;">How AI-ready is your workforce?</div>
+        <div style="font-size:14px;color:var(--muted);">10 questions. 3 minutes. Get your readiness score, maturity level, and personalized gap report.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;">First Name *</div>
+          <input type="text" id="leadFirst" placeholder="First name" value="${leadInfo.first||''}" oninput="leadInfo.first=this.value" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;">
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;">Last Name *</div>
+          <input type="text" id="leadLast" placeholder="Last name" value="${leadInfo.last||''}" oninput="leadInfo.last=this.value" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;">
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;">Work Email *</div>
+        <input type="email" id="leadEmail" placeholder="you@company.com" value="${leadInfo.email||''}" oninput="leadInfo.email=this.value" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;">Company *</div>
+          <input type="text" id="leadCompany" placeholder="Company name" value="${leadInfo.company||''}" oninput="leadInfo.company=this.value" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;">
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px;">Title *</div>
+          <input type="text" id="leadTitle" placeholder="Your title" value="${leadInfo.title||''}" oninput="leadInfo.title=this.value" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:14px;">
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px 16px;border-radius:10px;background:var(--blue-light);border:1px solid var(--blue-pale);font-size:13px;color:var(--body-dark);line-height:1.5;">
+        Your responses will generate a personalized readiness score and gap report. We will use your information to tailor the results to your industry and company size.
+      </div>
+    `;
+    return;
+  }
+
+  const q = questions[current];
+  document.getElementById('progressFill').style.width = ((current + 1) / questions.length * 100) + '%';
+  document.getElementById('backBtn').style.visibility = current === 0 ? 'hidden' : 'visible';
+  document.getElementById('nextBtn').textContent = current === questions.length - 1 ? 'See Results' : 'Next';
+  document.getElementById('nextBtn').disabled = answers[current] === -1;
+
+  document.getElementById('questionArea').innerHTML = `
+    <div class="step-count">Question ${current + 1} of ${questions.length}</div>
+    <div class="question">${q.q}</div>
+    <div class="question-sub">${q.sub}</div>
+    <div class="options">
+      ${q.options.map((opt, i) => `
+        <div class="option ${answers[current] === i ? 'selected' : ''}" onclick="selectOption(${i})">
+          <div class="option-marker"></div>
+          <div>${opt}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function selectOption(i) {
+  answers[current] = i;
+  render();
+}
+
+function navigate(dir) {
+  if (current === -1 && dir === 1) {
+    // Validate lead capture
+    const f = document.getElementById('leadFirst');
+    const l = document.getElementById('leadLast');
+    const e = document.getElementById('leadEmail');
+    const c = document.getElementById('leadCompany');
+    const t = document.getElementById('leadTitle');
+    if (!f.value || !l.value || !e.value || !c.value || !t.value) {
+      [f,l,e,c,t].forEach(el => { if (!el.value) el.style.borderColor = '#EF4444'; else el.style.borderColor = ''; });
+      return;
+    }
+    leadInfo = { first: f.value, last: l.value, email: e.value, company: c.value, title: t.value };
+    current = 0;
+    render();
+    return;
+  }
+  if (dir === 1 && current === questions.length - 1) {
+    showResults();
+    return;
+  }
+  current = Math.max(0, Math.min(questions.length - 1, current + dir));
+  render();
+}
+
+function showResults() {
+  let total = 0;
+  answers.forEach((a, i) => { total += questions[i].scores[a]; });
+
+  // Maturity level
+  let level, levelColor, levelBg, desc;
+  if (total >= 40) {
+    level = 'AI-Ready'; levelColor = '#059669'; levelBg = '#ECFDF5';
+    desc = 'Your organization has the infrastructure, mandate, and maturity to adopt an AI-powered learning platform. The gap between your knowledge sources and skills measurement is the primary opportunity. AgentHub closes that loop.';
+  } else if (total >= 30) {
+    level = 'Accelerating'; levelColor = '#2563EB'; levelBg = '#EFF6FF';
+    desc = 'Strong foundations are in place. AI tools are deployed and there is executive interest. The missing piece is connecting knowledge sources to learning outcomes and measurable skills. You are one platform decision away from closing the loop.';
+  } else if (total >= 20) {
+    level = 'Emerging'; levelColor = '#D97706'; levelBg = '#FFFBEB';
+    desc = 'Your organization is starting to feel the disconnect between knowledge, learning, and skills but has not yet invested in solving it. Building the business case for an integrated platform should start with quantifying the cost of the current disconnected state.';
+  } else {
+    level = 'Early Stage'; levelColor = '#64748B'; levelBg = '#F8FAFC';
+    desc = 'Your organization is in the early stages of L&D maturity. The priority is building foundational learning infrastructure before layering on AI-powered capabilities. AgentHub may be a future consideration as your program matures.';
+  }
+
+  // Gap report
+  let gaps = [];
+  answers.forEach((a, i) => {
+    const score = questions[i].scores[a];
+    if (score >= 4) {
+      const dim = questions[i].dimension;
+      const gapMessages = {
+        'Knowledge Fragmentation': ['High fragmentation across 4+ knowledge sources.', 'AgentHub reads across 20+ sources and turns scattered knowledge into structured learning automatically.', 'var(--red)', 'var(--red-light)'],
+        'Content Creation Maturity': ['Content is still built manually by the L&D team.', 'AgentHub agents generate learning content from your existing knowledge sources. Your team shifts from building courses to curating and approving.', 'var(--orange)', 'var(--orange-light)'],
+        'Skills Measurement': ['Skills tracking is limited to course completions or self-reports.', 'AgentHub ties learning outcomes to measurable skills, giving leadership defensible workforce capability data.', 'var(--amber-dark)', 'var(--amber-light)'],
+        'Platform Maturity': ['Current LMS is a displacement candidate.', 'AgentHub replaces legacy learning infrastructure with a platform that connects knowledge, learning, and skills in one closed loop.', 'var(--blue)', 'var(--blue-light)'],
+        'AI Readiness': ['AI tools are already deployed, but cannot prove learning outcomes.', 'AgentHub closes the gap between "finding answers" and "proving capability." Your AI investment becomes measurable.', 'var(--purple)', 'var(--purple-light)'],
+        'Executive Sponsorship': ['Executive sponsor is in place with budget.', 'The organizational air cover exists. The next step is connecting the mandate to a platform that delivers measurable outcomes.', 'var(--green-dark)', 'var(--green-light)'],
+        'Buying Timeline': ['Actively evaluating or contract renewal approaching.', 'The buying window is open. A structured evaluation of how AgentHub compares to your current stack would be the logical next step.', 'var(--blue)', 'var(--blue-light)'],
+        'Primary Pain Point': ['A core L&D pain point that AgentHub directly addresses.', 'This is the "why now" for your organization. The pain is felt and the solution exists.', 'var(--red)', 'var(--red-light)'],
+        'Extended Enterprise': ['Significant external training needs.', 'Docebo has 20 years of extended enterprise depth — customer, partner, and contractor training that most AI-native platforms cannot match.', 'var(--green-dark)', 'var(--green-light)'],
+        'Scale': ['Enterprise scale supports the platform investment.', 'Deal economics and organizational complexity justify a comprehensive platform over point solutions.', 'var(--navy)', '#F1F5F9'],
+      };
+      if (gapMessages[dim]) {
+        gaps.push(gapMessages[dim]);
+      }
+    }
+  });
+
+  document.getElementById('assessmentCard').style.display = 'none';
+  document.getElementById('resultsCard').className = '';
+
+  // Animate score
+  const arc = document.getElementById('scoreArc');
+  const dashOffset = 440 - (total / 50 * 440);
+  arc.style.transition = 'stroke-dashoffset 1.2s ease';
+  arc.style.strokeDashoffset = 440;
+  setTimeout(() => { arc.style.strokeDashoffset = dashOffset; }, 100);
+  document.getElementById('scoreValue').textContent = total;
+
+  document.getElementById('maturityBadge').innerHTML = `<div class="maturity-badge" style="background:${levelBg};color:${levelColor};border:1px solid ${levelColor}25;">${level}</div>`;
+  document.getElementById('maturityDesc').textContent = desc;
+
+  document.getElementById('gapReport').innerHTML = gaps.slice(0, 4).map(([finding, rec, color, bg]) => `
+    <div class="gap-item" style="background:${bg};border-left:4px solid ${color};">
+      <div style="font-weight:700;color:${color};margin-bottom:4px;">${finding}</div>
+      <div style="color:var(--body-dark);">${rec}</div>
+    </div>
+  `).join('');
+}
+
+render();
+</script>
+</body>
+</html>
